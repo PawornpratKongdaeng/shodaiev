@@ -1,0 +1,143 @@
+{
+  "heroTitle": "ShodaiEV",
+  "heroSubtitle": "ขายของเกี่ยวกับรถ",
+  "phone": "0995566453",
+  "line": "SHOGUNTHAI, @shodaiev",
+  "lineUrl": "",
+  "facebook": "ซ่อมมอเตอร์ไซค์ไฟฟ้า/3 ล้อไฟฟ้า/รถไฟฟ้า/สกู๊ตเตอร์ บริการถึงบ้าน shodai ev ",
+  "mapUrl": "",
+  "services": [
+    {
+      "id": "service",
+      "icon": "✨",
+      "title": "",
+      "description": ""
+    }
+  ],
+  "products": [],
+  "productsSections": {
+    "home": [],
+    "page2": []
+  },
+  "topics": [],
+  "serviceDetails": [
+    {
+      "id": "74a8cfe6-fe51-4240-a5b8-4738c65aa75a",
+      "topicId": "f9d6616c-7885-41e4-8394-67b7e2eb0ef6",
+      "title": "",
+      "description": "",
+      "images": [
+        "/uploads/14-1764100112342.jpg",
+        "/uploads/phone-call (1)-1764100114329.png",
+        "/uploads/11-1764100118161.jpg",
+        "/uploads/12-1764100118181.jpg",
+        "/uploads/13-1764100118198.jpg",
+        "/uploads/14-1764100118222.jpg",
+        "/uploads/facebook-1764100118238.png",
+        "/uploads/phone-call (1)-1764100118254.png",
+        "/uploads/phone-call-1764100118270.png"
+      ]
+    },
+    {
+      "id": "b98b79cf-98ce-487c-9447-244288d3baa9",
+      "topicId": "41f576c7-8860-47d8-a8c6-d3b0ea6cdf00",
+      "title": "",
+      "description": "",
+      "images": [
+        "/uploads/11-1764182667623.jpg",
+        "/uploads/12-1764182667648.jpg",
+        "/uploads/13-1764182667676.jpg",
+        "/uploads/14-1764182667704.jpg",
+        "/uploads/23-1764182667745.jpg",
+        "/uploads/facebook-1764182667767.png",
+        "/uploads/phone-call (1)-1764182667787.png",
+        "/uploads/phone-call-1764182667812.png"
+      ]
+    },
+    {
+      "id": "a91d0c40-3e7b-4d76-9814-c91e7156d06b",
+      "topicId": "56783c98-0259-4c81-87a3-1bb01dc2463b",
+      "title": "2 ล้อ",
+      "description": "2 ล้อ",
+      "images": [],
+      "sections": [
+        {
+          "id": "3074593f-fc67-4890-8d98-bb5a6a2c0f52",
+          "title": "เปลี่ยนยาง",
+          "description": "เปลี่ยนยาง",
+          "images": [
+            "/uploads/facebook-1764183853690.png",
+            "/uploads/11-1764183868924.jpg",
+            "/uploads/12-1764183868955.jpg",
+            "/uploads/13-1764183868987.jpg",
+            "/uploads/14-1764183869021.jpg",
+            "/uploads/23-1764183869047.jpg",
+            "/uploads/facebook-1764183869070.png",
+            "/uploads/phone-call (1)-1764183869105.png",
+            "/uploads/phone-call-1764183869134.png",
+            "/uploads/589342563_833528666126225_4005145862710470715_n-1764184036127.jpg"
+          ]
+        },
+        {
+          "id": "341c2a5d-998b-4463-b87c-1dc17ba597fd",
+          "title": "",
+          "description": "",
+          "images": []
+        }
+      ]
+    },
+    {
+      "id": "3ล้อ",
+      "topicId": "3ล้อ",
+      "title": "3ล้อ",
+      "description": "3ล้อ",
+      "images": []
+    },
+    {
+      "id": "14bf1774-7d93-4c19-b1c5-8851b95477da",
+      "topicId": "2-ล้อ",
+      "title": "2 ล้อ",
+      "description": "2 ล้อ",
+      "images": [
+        "/uploads/11-1764225522384.jpg",
+        "/uploads/12-1764225522409.jpg",
+        "/uploads/13-1764225522436.jpg",
+        "/uploads/14-1764225522465.jpg",
+        "/uploads/23-1764225522487.jpg",
+        "/uploads/589342563_833528666126225_4005145862710470715_n-1764225522510.jpg",
+        "/uploads/facebook-1764225522532.png",
+        "/uploads/phone-call (1)-1764225522554.png",
+        "/uploads/phone-call-1764225522579.png"
+      ],
+      "sections": [
+        {
+          "id": "99704581-34d9-492e-83f3-c1dcfc4a8d8a",
+          "title": "ยาง",
+          "description": "ยาง",
+          "images": [
+            "/uploads/11-1764225531108.jpg",
+            "/uploads/12-1764225531157.jpg",
+            "/uploads/13-1764225531181.jpg",
+            "/uploads/14-1764225531203.jpg",
+            "/uploads/23-1764225531233.jpg",
+            "/uploads/589342563_833528666126225_4005145862710470715_n-1764225531256.jpg",
+            "/uploads/facebook-1764225531277.png",
+            "/uploads/phone-call (1)-1764225531300.png",
+            "/uploads/phone-call-1764225531325.png"
+          ]
+        }
+      ]
+    }
+  ],
+  "homeGallery": [],
+  "theme": {
+    "primary": "#f97316",
+    "primarySoft": "#ffedd5",
+    "accent": "#dc2626",
+    "background": "#ffffff",
+    "surface": "#fef3c7",
+    "text": "#474f62"
+  },
+  "images": [],
+  "heroImageUrl": ""
+}
