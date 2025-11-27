@@ -49,58 +49,35 @@ export type ThemeColors = {
   text: string;
 };
 
-// 🎯 ฟิลด์ SEO/Business ที่ Admin จะกรอกได้ (ค่อยไปทำ UI ทีหลังได้)
 export type SiteConfig = {
+  seoTitleHome: string;
+  seoDescriptionHome: string;
+  businessGeoLat: any;
+  businessAddress: string;
+  businessName: string;
   heroTitle?: string;
   heroSubtitle?: string;
   heroImageUrl?: string;
-
   phone?: string;
   line?: string;
   lineUrl?: string;
   facebook?: string;
   mapUrl?: string;
-
   services: ServiceItem[];
   products?: ProductItem[];
   productsSections?: {
     home: ProductItem[];
     page2: ProductItem[];
   };
-
   topics?: TopicItem[];
   serviceDetails?: ServiceDetailItem[];
-
-  // gallery หน้าแรก
-  homeGallery?: string[];
-
-  // theme สี
-  theme?: ThemeColors;
-
-  // 🔍 SEO fields (optional)
-  seoTitleHome?: string;
-  seoDescriptionHome?: string;
-  seoKeywordsHome?: string;
-
-  seoTitleServices?: string;
-  seoDescriptionServices?: string;
-
-  // ใช้เป็น prefix/suffix เวลา generate metadata ของหน้า service detail
-  seoServiceDetailTitlePrefix?: string;     // เช่น "บริการ | "
-  seoServiceDetailDescriptionSuffix?: string; // เช่น " | ShodaiEV บริการถึงที่"
-
-  // Local Business info (ใช้ใน JSON-LD)
-  businessName?: string;
-  businessAddress?: string;
-  businessGeoLat?: number;
-  businessGeoLng?: number;
-
-  // OG image หลักของเว็บ
-  ogImageUrl?: string;
+  homeGallery?: string[];      // ✅ เพิ่มให้ตรงกับที่ใช้
+  theme?: ThemeColors;         // ✅ config สี
 };
 
 const filePath = path.join(process.cwd(), "data", "site.json");
 
+// ✅ export ออกมาให้ layout.tsx ใช้ได้
 export const defaultTheme: ThemeColors = {
   primary: "#f97316",
   primarySoft: "#ffedd5",
@@ -128,11 +105,6 @@ const defaultConfig: SiteConfig = {
   serviceDetails: [],
   homeGallery: [],
   theme: defaultTheme,
-
-  // ดีฟอลต์ SEO ถ้ายังไม่กรอกจาก Admin
-  seoTitleHome: "ShodaiEV | ซ่อมรถไฟฟ้า 2 ล้อ 3 ล้อ รถมอเตอร์ไซค์ไฟฟ้า บริการถึงบ้าน",
-  seoDescriptionHome:
-    "ShodaiEV ให้บริการซ่อมมอเตอร์ไซค์ไฟฟ้า รถสามล้อไฟฟ้า สกู๊ตเตอร์ไฟฟ้า พร้อมบริการถึงบ้าน เขตพื้นที่ให้บริการตามที่กำหนด โทรสอบถามหรือแชทไลน์ได้ทันที",
 };
 
 export async function loadSiteData(): Promise<SiteConfig> {
@@ -153,7 +125,11 @@ export async function loadSiteData(): Promise<SiteConfig> {
       homeGallery: Array.isArray(parsed.homeGallery)
         ? parsed.homeGallery
         : [],
-      theme: parsed.theme ?? defaultTheme,
+      // ✅ merge theme จากไฟล์ + default
+      theme: {
+        ...defaultTheme,
+        ...(parsed.theme || {}),
+      },
     };
   } catch (err: any) {
     if (err.code === "ENOENT") {

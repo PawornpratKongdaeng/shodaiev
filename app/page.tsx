@@ -32,8 +32,8 @@ export default async function HomePage() {
   const telephone = data.phone || "";
   const mapUrl = data.mapUrl || "";
   const lat = data.businessGeoLat;
-  const lng = data.businessGeoLng;
-  const ogImage = data.ogImageUrl || data.heroImageUrl || "";
+  const lng = data.businessGeoLat;
+  const ogImage = data.heroImageUrl || data.heroImageUrl || "";
 
   const jsonLdLocalBusiness = {
     "@context": "https://schema.org",
@@ -115,7 +115,7 @@ export default async function HomePage() {
               ดูรายละเอียดบริการทั้งหมดที่เรามีให้
             </p>
             <Link
-              href="/page/product"
+              href="/page/products"
               className="inline-flex items-center gap-2 px-8 py-4 rounded-full text-white font-semibold bg-gradient-to-r from-red-600 to-orange-500 hover:from-red-700 hover:to-orange-600 transition-all shadow-md shadow-orange-200 hover:shadow-lg hover:translate-y-[1px]"
             >
               <span>ดูบริการทั้งหมด</span>
