@@ -1,5 +1,6 @@
 // lib/server/siteData.ts
-import { kv } from "@vercel/kv";
+import fs from "fs/promises";
+import path from "path";
 
 export type ServiceItem = {
   id: string;
@@ -39,6 +40,7 @@ export type ServiceDetailItem = {
   sections?: ServiceDetailSection[];
 };
 
+// 🎨 Theme type
 export type ThemeColors = {
   primary: string;
   primarySoft: string;
@@ -46,6 +48,16 @@ export type ThemeColors = {
   background: string;
   surface: string;
   text: string;
+};
+
+// ✅ ต้อง export defaultTheme ออกมาด้วย
+export const defaultTheme: ThemeColors = {
+  primary: "#f97316",
+  primarySoft: "#ffedd5",
+  accent: "#dc2626",
+  background: "#ffffff",
+  surface: "#fef3c7",
+  text: "#0f172a",
 };
 
 export type SiteConfig = {
@@ -65,18 +77,15 @@ export type SiteConfig = {
   };
   topics?: TopicItem[];
   serviceDetails?: ServiceDetailItem[];
+
+  // 🖼 รูป gallery หน้าแรก
   homeGallery?: string[];
+
+  // 🎨 theme สีทั้งหมด
   theme?: ThemeColors;
 };
 
-const defaultTheme: ThemeColors = {
-  primary: "#f97316",
-  primarySoft: "#ffedd5",
-  accent: "#dc2626",
-  background: "#ffffff",
-  surface: "#fef3c7",
-  text: "#0f172a",
-};
+const filePath = path.join(process.cwd(), "data", "site.json");
 
 const defaultConfig: SiteConfig = {
   heroTitle: "ShodaiEV",
@@ -98,33 +107,37 @@ const defaultConfig: SiteConfig = {
   theme: defaultTheme,
 };
 
-const SITE_CONFIG_KEY = "site-config-v1";
-
 export async function loadSiteData(): Promise<SiteConfig> {
-  const stored = await kv.get<SiteConfig>(SITE_CONFIG_KEY);
+  try {
+    const content = await fs.readFile(filePath, "utf8");
+    const parsed = JSON.parse(content);
 
-  if (!stored) {
-    await kv.set(SITE_CONFIG_KEY, defaultConfig);
-    return defaultConfig;
+    return {
+      ...defaultConfig,
+      ...parsed,
+      services: Array.isArray(parsed.services) ? parsed.services : [],
+      products: Array.isArray(parsed.products) ? parsed.products : [],
+      productsSections: parsed.productsSections ?? { home: [], page2: [] },
+      topics: Array.isArray(parsed.topics) ? parsed.topics : [],
+      serviceDetails: Array.isArray(parsed.serviceDetails)
+        ? parsed.serviceDetails
+        : [],
+      homeGallery: Array.isArray(parsed.homeGallery)
+        ? parsed.homeGallery
+        : [],
+      theme: parsed.theme ?? defaultTheme,
+    };
+  } catch (err: any) {
+    if (err.code === "ENOENT") {
+      await saveSiteData(defaultConfig);
+      return defaultConfig;
+    }
+    throw err;
   }
-
-  const parsed = stored || {};
-
-  return {
-    ...defaultConfig,
-    ...parsed,
-    services: Array.isArray(parsed.services) ? parsed.services : [],
-    products: Array.isArray(parsed.products) ? parsed.products : [],
-    productsSections: parsed.productsSections ?? { home: [], page2: [] },
-    topics: Array.isArray(parsed.topics) ? parsed.topics : [],
-    serviceDetails: Array.isArray(parsed.serviceDetails)
-      ? parsed.serviceDetails
-      : [],
-    homeGallery: Array.isArray(parsed.homeGallery) ? parsed.homeGallery : [],
-    theme: parsed.theme ?? defaultTheme,
-  };
 }
 
 export async function saveSiteData(data: SiteConfig): Promise<void> {
-  await kv.set(SITE_CONFIG_KEY, data);
+  const dir = path.dirname(filePath);
+  await fs.mkdir(dir, { recursive: true });
+  await fs.writeFile(filePath, JSON.stringify(data, null, 2), "utf8");
 }

@@ -13,8 +13,7 @@ const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL || "https://shodaiev.com";
 
 export const metadata: Metadata = {
-  title:
-    "ShodaiEV | ซ่อมรถไฟฟ้า 2 ล้อ 3 ล้อ บริการถึงบ้าน",
+  title: "ShodaiEV | ซ่อมรถไฟฟ้า 2 ล้อ 3 ล้อ บริการถึงบ้าน",
   description:
     "ShodaiEV รับซ่อมมอเตอร์ไซค์ไฟฟ้า รถสามล้อไฟฟ้า สกู๊ตเตอร์ไฟฟ้า พร้อมบริการถึงบ้าน ติดต่อได้ทางโทรศัพท์ ไลน์ และเฟซบุ๊ก",
   alternates: {
@@ -27,13 +26,12 @@ export default async function HomePage() {
 
   const businessName = data.businessName || "ShodaiEV";
   const businessAddress =
-    data.businessAddress ||
-    "ตำแหน่งตามลิงก์ Google Maps ที่ให้ไว้";
+    data.businessAddress || "ตำแหน่งตามลิงก์ Google Maps ที่ให้ไว้";
   const telephone = data.phone || "";
   const mapUrl = data.mapUrl || "";
   const lat = data.businessGeoLat;
-  const lng = data.businessGeoLat;
-  const ogImage = data.heroImageUrl || data.heroImageUrl || "";
+  const lng = data.businessGeoLng; // ✅ แก้ตรงนี้
+  const ogImage = data.heroImageUrl || "";
 
   const jsonLdLocalBusiness = {
     "@context": "https://schema.org",
@@ -42,7 +40,7 @@ export default async function HomePage() {
     description:
       data.seoDescriptionHome ||
       "บริการซ่อมรถไฟฟ้า มอเตอร์ไซค์ไฟฟ้า และสามล้อไฟฟ้า",
-    telephone: telephone,
+    telephone,
     address: {
       "@type": "PostalAddress",
       streetAddress: businessAddress,
@@ -58,9 +56,7 @@ export default async function HomePage() {
           }
         : undefined,
     sameAs: [
-      data.facebook
-        ? "https://www.facebook.com/shodaiev/"
-        : undefined,
+      data.facebook ? "https://www.facebook.com/shodaiev/" : undefined,
       data.lineUrl || undefined,
       mapUrl || undefined,
     ].filter(Boolean),
@@ -68,7 +64,6 @@ export default async function HomePage() {
 
   return (
     <main className="bg-[var(--color-bg)] text-[var(--color-text)]">
-      {/* JSON-LD LocalBusiness */}
       <Script
         id="ld-local-business"
         type="application/ld+json"
@@ -80,7 +75,6 @@ export default async function HomePage() {
 
       <Header phone={data.phone ?? ""} line={data.line ?? ""} />
 
-      {/* H1 หลักของหน้า */}
       <h1 className="sr-only">
         {data.seoTitleHome ||
           "ShodaiEV บริการซ่อมรถไฟฟ้า มอเตอร์ไซค์ไฟฟ้า และสามล้อไฟฟ้า บริการถึงบ้าน"}
@@ -92,7 +86,6 @@ export default async function HomePage() {
 
       <ProductsSection products={data.products ?? []} />
 
-      {/* ... Section บริการของเรา เหมือนเดิม ... */}
       <section className="py-20 bg-amber-50">
         <div className="max-w-6xl mx-auto px-4 text-center">
           <div className="mb-12">
@@ -115,7 +108,7 @@ export default async function HomePage() {
               ดูรายละเอียดบริการทั้งหมดที่เรามีให้
             </p>
             <Link
-              href="/page/products"
+              href="/page/product" // ✅ แก้ path
               className="inline-flex items-center gap-2 px-8 py-4 rounded-full text-white font-semibold bg-gradient-to-r from-red-600 to-orange-500 hover:from-red-700 hover:to-orange-600 transition-all shadow-md shadow-orange-200 hover:shadow-lg hover:translate-y-[1px]"
             >
               <span>ดูบริการทั้งหมด</span>

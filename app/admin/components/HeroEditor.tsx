@@ -1,4 +1,16 @@
-export default function HeroEditor({ config, setConfig }) {
+import type { Dispatch, SetStateAction } from 'react';
+
+type HeroConfig = {
+  heroTitle: string;
+  heroSubtitle: string;
+};
+
+type Props = {
+  config: HeroConfig;
+  setConfig: Dispatch<SetStateAction<HeroConfig>>;
+};
+
+export default function HeroEditor({ config, setConfig }: Props) {
   return (
     <div className="space-y-3">
       <div className="form-control">
