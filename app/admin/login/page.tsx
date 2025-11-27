@@ -1,96 +1,95 @@
 // app/admin/login/page.tsx
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, FormEvent } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function AdminLoginPage() {
   const router = useRouter();
-  const [user, setUser] = useState("");
-  const [pass, setPass] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const callback = searchParams.get("callback") || "/admin";
+
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    setError(null);
     setSubmitting(true);
+    setError("");
 
     try {
       const res = await fetch("/api/admin/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user, pass }),
+        body: JSON.stringify({ username, password }),
       });
 
       if (!res.ok) {
         const data = await res.json().catch(() => null);
-        setError(data?.message || "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง");
-        setSubmitting(false);
+        setError(data?.message || "เข้าสู่ระบบไม่สำเร็จ");
         return;
       }
 
-      router.push("/admin");
+      // login สำเร็จ → กลับไปหน้า admin
+      router.push(callback);
+      router.refresh();
     } catch (err) {
-      setError("ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้");
+      setError("เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์");
+    } finally {
       setSubmitting(false);
     }
-  };
+  }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[var(--color-bg)] text-[var(--color-text)] px-4">
-      <div className="w-full max-w-md bg-white/90 border border-[var(--color-primary-soft)] rounded-2xl shadow-md p-6 sm:p-8">
-        <h1 className="text-2xl sm:text-3xl font-bold mb-2 text-center text-[var(--color-text)]">
-          เข้าสู่ระบบแอดมิน
+    <main className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-md border border-slate-200 p-6 space-y-4">
+        <h1 className="text-xl font-semibold text-slate-900 text-center">
+          เข้าสู่ระบบผู้ดูแล (Admin)
         </h1>
-        <p className="text-sm text-slate-500 text-center mb-6">
-          สำหรับจัดการข้อมูลหน้าเว็บ ShodaiEV
-        </p>
 
-        {error && (
-          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-3">
           <div>
-            <label className="block text-sm font-medium mb-1 text-slate-700">
+            <label className="block text-sm font-medium text-slate-700 mb-1">
               Username
             </label>
             <input
-              type="text"
-              value={user}
-              onChange={(e) => setUser(e.target.value)}
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-[var(--color-primary)]"
-              placeholder="เช่น ShodaiEV"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
               autoComplete="username"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1 text-slate-700">
+            <label className="block text-sm font-medium text-slate-700 mb-1">
               Password
             </label>
             <input
               type="password"
-              value={pass}
-              onChange={(e) => setPass(e.target.value)}
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-[var(--color-primary)]"
-              placeholder="รหัสผ่านแอดมิน"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
               autoComplete="current-password"
             />
           </div>
 
+          {error && (
+            <p className="text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
+              {error}
+            </p>
+          )}
+
           <button
             type="submit"
             disabled={submitting}
-            className="w-full mt-2 rounded-lg bg-[var(--color-primary)] hover:bg-[var(--color-accent)] text-white font-semibold py-2.5 text-sm shadow-sm disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+            className="w-full rounded-lg bg-gradient-to-r from-red-600 to-orange-500 text-white text-sm font-semibold py-2.5 mt-2 disabled:opacity-60"
           >
             {submitting ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
           </button>
         </form>
       </div>
-    </div>
+    </main>
   );
 }

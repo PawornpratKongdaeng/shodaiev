@@ -63,7 +63,7 @@ export default function Contact({
               className="block w-full rounded-2xl bg-[var(--color-bg)] p-5 sm:p-6 border border-[var(--color-primary-soft)] hover:border-[var(--color-primary)] shadow-sm hover:shadow-md transition-all"
             >
               <div className="flex items-center">
-                <img src="/Line_Brand_icon.png" className="w-6 h-6" />
+                <img src="/LINE_Brand_icon.png" className="w-6 h-6" />
                 <span className="ml-4 text-base sm:text-lg text-[var(--color-text)] break-all">
                   {line}
                 </span>

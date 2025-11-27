@@ -1,11 +1,13 @@
 {
   "heroTitle": "ShodaiEV",
   "heroSubtitle": "ขายของเกี่ยวกับรถ",
-  "phone": "0995566453",
+  "phone": "TEST",
   "line": "SHOGUNTHAI, @shodaiev",
   "lineUrl": "",
   "facebook": "ซ่อมมอเตอร์ไซค์ไฟฟ้า/3 ล้อไฟฟ้า/รถไฟฟ้า/สกู๊ตเตอร์ บริการถึงบ้าน shodai ev ",
   "mapUrl": "",
+  "businessName": "ShodaiEV",
+  "businessAddress": "",
   "services": [
     {
       "id": "service",
@@ -146,6 +148,8 @@
     "surface": "#fef3c7",
     "text": "#474f62"
   },
+  "seoServiceDetailDescriptionSuffix": "",
+  "seoServiceDetailTitlePrefix": "",
   "images": [],
   "heroImageUrl": ""
 }
