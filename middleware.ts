@@ -1,28 +1,48 @@
 // middleware.ts
 import { NextRequest, NextResponse } from "next/server";
 
+const basicAuthUser = process.env.ADMIN_USER;
+const basicAuthPass = process.env.ADMIN_PASS;
+
 export function middleware(req: NextRequest) {
   const url = req.nextUrl;
-  const { pathname } = url;
+  const isAdminPath = url.pathname.startsWith("/admin");
 
-  // ไม่ใช่ /admin → ปล่อยผ่าน
-  if (!pathname.startsWith("/admin")) return NextResponse.next();
+  if (!isAdminPath) return NextResponse.next();
 
-  // อนุญาตหน้า login เอง เสมอ (กัน loop redirect)
-  if (pathname.startsWith("/admin/login")) return NextResponse.next();
+  const authHeader = req.headers.get("authorization");
 
-  const authCookie = req.cookies.get("admin_auth");
-
-  // ถ้ามี cookie แล้ว → ผ่าน
-  if (authCookie?.value === "1") {
-    return NextResponse.next();
+  if (!authHeader || !authHeader.startsWith("Basic ")) {
+    return new NextResponse("Auth required", {
+      status: 401,
+      headers: { "WWW-Authenticate": 'Basic realm="Admin Area"' },
+    });
   }
 
-  // ยังไม่ได้ login → redirect ไปหน้า login
-  const loginUrl = new URL("/admin/login", req.url);
-  loginUrl.searchParams.set("redirect", pathname);
+  const base64 = authHeader.split(" ")[1] || "";
+  let decoded = "";
 
-  return NextResponse.redirect(loginUrl);
+  try {
+    decoded = atob(base64); // Edge Runtime มี atob
+  } catch {
+    return new NextResponse("Invalid auth", {
+      status: 401,
+      headers: { "WWW-Authenticate": 'Basic realm="Admin Area"' },
+    });
+  }
+
+  const [user, pass] = decoded.split(":");
+
+  const ok = user === basicAuthUser && pass === basicAuthPass;
+
+  if (!ok) {
+    return new NextResponse("Unauthorized", {
+      status: 401,
+      headers: { "WWW-Authenticate": 'Basic realm="Admin Area"' },
+    });
+  }
+
+  return NextResponse.next();
 }
 
 export const config = {
