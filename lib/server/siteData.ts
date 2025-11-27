@@ -1,7 +1,7 @@
 // lib/server/siteData.ts
 import fs from "fs/promises";
 import path from "path";
-import { kv } from "@vercel/kv";
+import { put, list, del } from "@vercel/blob";
 
 export type ServiceItem = {
   id: string;
@@ -81,8 +81,11 @@ export type SiteConfig = {
 };
 
 const filePath = path.join(process.cwd(), "data", "site.json");
-const KV_KEY = "shodaiev:site-config";
-const isVercel = !!process.env.VERCEL;
+
+// ใช้ตรวจว่าโปรเจกต์มี Blob token ไหม
+const hasBlob = !!process.env.BLOB_READ_WRITE_TOKEN;
+// path ที่จะเก็บ config ใน Blob
+const CONFIG_BLOB_PATH = "config/site.json";
 
 export const defaultTheme: ThemeColors = {
   primary: "#f97316",
@@ -119,52 +122,81 @@ const defaultConfig: SiteConfig = {
 
 function normalizeConfig(raw: Partial<SiteConfig> | null): SiteConfig {
   const parsed = raw || {};
-  const services = Array.isArray(parsed.services) ? parsed.services : [];
-  const products = Array.isArray(parsed.products) ? parsed.products : [];
-  const productsSections =
-    parsed.productsSections ?? { home: [], page2: [] };
-  const topics = Array.isArray(parsed.topics) ? parsed.topics : [];
-  const serviceDetails = Array.isArray(parsed.serviceDetails)
-    ? parsed.serviceDetails
-    : [];
-  const homeGallery = Array.isArray(parsed.homeGallery)
-    ? parsed.homeGallery
-    : [];
-  const theme = parsed.theme
-    ? { ...defaultTheme, ...parsed.theme }
-    : defaultTheme;
-
   return {
     ...defaultConfig,
     ...parsed,
-    services,
-    products,
-    productsSections,
-    topics,
-    serviceDetails,
-    homeGallery,
-    theme,
+    services: Array.isArray(parsed.services) ? parsed.services : [],
+    products: Array.isArray(parsed.products) ? parsed.products : [],
+    productsSections:
+      parsed.productsSections ?? { home: [], page2: [] },
+    topics: Array.isArray(parsed.topics) ? parsed.topics : [],
+    serviceDetails: Array.isArray(parsed.serviceDetails)
+      ? parsed.serviceDetails
+      : [],
+    homeGallery: Array.isArray(parsed.homeGallery)
+      ? parsed.homeGallery
+      : [],
+    theme: parsed.theme
+      ? { ...defaultTheme, ...parsed.theme }
+      : defaultTheme,
   };
 }
 
-export async function loadSiteData(): Promise<SiteConfig> {
-  if (isVercel) {
-    const fromKv = await kv.get<SiteConfig>(KV_KEY);
-    if (!fromKv) {
-      await kv.set(KV_KEY, defaultConfig);
-      return defaultConfig;
-    }
-    return normalizeConfig(fromKv);
+/* ---------- โหลดจาก Blob ---------- */
+
+async function loadFromBlob(): Promise<SiteConfig> {
+  // หา blob ที่ path ตรงกับ CONFIG_BLOB_PATH
+  const { blobs } = await list({
+    prefix: CONFIG_BLOB_PATH,
+    limit: 1,
+  });
+
+  if (!blobs || blobs.length === 0) {
+    // ถ้ายังไม่มีไฟล์เลย → seed ด้วย defaultConfig
+    await saveToBlob(defaultConfig);
+    return defaultConfig;
   }
 
+  const blob = blobs[0];
+
+  const res = await fetch(blob.url, {
+    // กัน cache เก่า
+    cache: "no-store",
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch config blob");
+  }
+
+  const json = (await res.json()) as Partial<SiteConfig>;
+  return normalizeConfig(json);
+}
+
+async function saveToBlob(cfg: SiteConfig): Promise<void> {
+  const normalized = normalizeConfig(cfg);
+
+  // ลบ blob เดิม (ถ้ามี) ก่อน เพื่อให้ใช้ path เดิมได้
+  await del(CONFIG_BLOB_PATH).catch(() => {});
+
+  await put(
+    CONFIG_BLOB_PATH,
+    JSON.stringify(normalized),
+    {
+      access: "public",
+      contentType: "application/json",
+      // cache ที่ edge 1 นาทีพอ เวลาแก้ config แล้วจะไม่ค้างนาน
+      cacheControlMaxAge: 60,
+    }
+  );
+}
+
+/* ---------- Fallback เป็นไฟล์ local ---------- */
+
+async function loadFromFile(): Promise<SiteConfig> {
   try {
     const content = await fs.readFile(filePath, "utf8");
     const parsed = JSON.parse(content);
-    const normalized = normalizeConfig(parsed);
-    try {
-      await kv.set(KV_KEY, normalized);
-    } catch {}
-    return normalized;
+    return normalizeConfig(parsed);
   } catch (err: any) {
     if (err.code === "ENOENT") {
       const normalized = normalizeConfig(defaultConfig);
@@ -175,26 +207,36 @@ export async function loadSiteData(): Promise<SiteConfig> {
         JSON.stringify(normalized, null, 2),
         "utf8"
       );
-      try {
-        await kv.set(KV_KEY, normalized);
-      } catch {}
       return normalized;
     }
     throw err;
   }
 }
 
-export async function saveSiteData(data: SiteConfig): Promise<void> {
-  const normalized = normalizeConfig(data);
-  await kv.set(KV_KEY, normalized);
+async function saveToFile(cfg: SiteConfig): Promise<void> {
+  const normalized = normalizeConfig(cfg);
+  const dir = path.dirname(filePath);
+  await fs.mkdir(dir, { recursive: true });
+  await fs.writeFile(
+    filePath,
+    JSON.stringify(normalized, null, 2),
+    "utf8"
+  );
+}
 
-  if (!isVercel) {
-    const dir = path.dirname(filePath);
-    await fs.mkdir(dir, { recursive: true });
-    await fs.writeFile(
-      filePath,
-      JSON.stringify(normalized, null, 2),
-      "utf8"
-    );
+/* ---------- ฟังก์ชันที่ใช้จริงในโปรเจกต์ ---------- */
+
+export async function loadSiteData(): Promise<SiteConfig> {
+  if (hasBlob) {
+    return loadFromBlob();
   }
+  return loadFromFile();
+}
+
+export async function saveSiteData(data: SiteConfig): Promise<void> {
+  if (hasBlob) {
+    await saveToBlob(data);
+    return;
+  }
+  await saveToFile(data);
 }
