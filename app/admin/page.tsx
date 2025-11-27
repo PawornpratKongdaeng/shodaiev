@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import type {
   SiteConfig,
   ServiceItem,
@@ -2143,7 +2144,9 @@ const ServiceDetailEditorView = ({
 
 
 
-export default function AdminPage() {
+const ADMIN_KEY = process.env.NEXT_PUBLIC_ADMIN_KEY;
+
+function AdminPageInner() {
   const [activeSection, setActiveSection] =
     useState<SectionId>("dashboard");
   const [config, setConfig] = useState<SiteConfig>(createEmptyConfig);
@@ -2267,4 +2270,41 @@ export default function AdminPage() {
       </main>
     </div>
   );
+}
+
+export default function AdminGuardPage() {
+  const searchParams = useSearchParams();
+  const key = searchParams.get("key");
+
+  if (!ADMIN_KEY) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="bg-white border border-slate-200 rounded-2xl px-6 py-4 text-center space-y-2">
+          <p className="text-sm font-semibold text-slate-900">
+            ยังไม่ได้ตั้งค่า ADMIN KEY
+          </p>
+          <p className="text-xs text-slate-500">
+            โปรดตั้งค่า NEXT_PUBLIC_ADMIN_KEY ใน .env.local และบน Vercel
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (key !== ADMIN_KEY) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="bg-white border border-slate-200 rounded-2xl px-6 py-4 text-center space-y-2">
+          <p className="text-sm font-semibold text-slate-900">
+            ไม่อนุญาตให้เข้าถึงหน้า Admin
+          </p>
+          <p className="text-xs text-slate-500">
+            โปรดใช้ลิงก์ที่ถูกต้องที่มี key แนบมาด้วย
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return <AdminPageInner />;
 }
