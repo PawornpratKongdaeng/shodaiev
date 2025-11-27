@@ -1,7 +1,8 @@
 // lib/server/siteData.ts
 import fs from "fs/promises";
 import path from "path";
-import { put, list, del } from "@vercel/blob";
+import { put, list } from "@vercel/blob";
+
 
 export type ServiceItem = {
   id: string;
@@ -175,20 +176,19 @@ async function loadFromBlob(): Promise<SiteConfig> {
 async function saveToBlob(cfg: SiteConfig): Promise<void> {
   const normalized = normalizeConfig(cfg);
 
-  // ลบ blob เดิม (ถ้ามี) ก่อน เพื่อให้ใช้ path เดิมได้
-  await del(CONFIG_BLOB_PATH).catch(() => {});
-
   await put(
     CONFIG_BLOB_PATH,
     JSON.stringify(normalized),
     {
       access: "public",
       contentType: "application/json",
-      // cache ที่ edge 1 นาทีพอ เวลาแก้ config แล้วจะไม่ค้างนาน
       cacheControlMaxAge: 60,
+      // 👇 อันนี้คือ key สำคัญ
+      allowOverwrite: true,
     }
   );
 }
+
 
 /* ---------- Fallback เป็นไฟล์ local ---------- */
 
