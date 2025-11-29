@@ -495,69 +495,128 @@ type HeroEditorProps = {
 
 const HeroEditorView = ({ config, setConfig }: HeroEditorProps) => {
   const [uploading, setUploading] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  const heroImages: string[] = Array.isArray(
+    (config as any).heroImages
+  )
+    ? ((config as any).heroImages as string[]).filter(Boolean)
+    : config.heroImageUrl
+    ? [config.heroImageUrl]
+    : [];
+
+  useEffect(() => {
+    // ถ้าลบรูปจน index เกิน ให้ดึงกลับมาใน range
+    if (currentIndex >= heroImages.length) {
+      setCurrentIndex(Math.max(0, heroImages.length - 1));
+    }
+  }, [heroImages.length, currentIndex]);
+
+  const applyImagesToConfig = (images: string[]) => {
+    setConfig({
+      ...config,
+      heroImageUrl: images[0] || "",
+      // ถ้า SiteConfig ยังไม่มี heroImages ให้เพิ่มใน type ด้วย
+      ...(config as any),
+      heroImages: images,
+    } as SiteConfig & { heroImages?: string[] });
+  };
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const formData = new FormData();
-    formData.append("file", file);
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
     setUploading(true);
     try {
-      const res = await fetch("/api/admin/upload", {
-        method: "POST",
-        body: formData,
-      });
+      const newUrls: string[] = [];
 
-      const json = await res.json();
+      for (const file of Array.from(files)) {
+        const formData = new FormData();
+        formData.append("file", file);
 
-      if (!json.ok || !json.url) {
+        const res = await fetch("/api/admin/upload", {
+          method: "POST",
+          body: formData,
+        });
+
+        const json = await res.json();
+        if (!json.ok || !json.url) {
+          console.error("Upload failed for", file.name);
+          continue;
+        }
+        newUrls.push(json.url);
+      }
+
+      if (newUrls.length === 0) {
         alert("Upload failed.");
         return;
       }
 
-      setConfig({
-        ...config,
-        heroImageUrl: json.url,
-      });
+      const merged = [...heroImages, ...newUrls];
+      applyImagesToConfig(merged);
+      if (heroImages.length === 0) setCurrentIndex(0);
     } catch (error) {
       console.error(error);
       alert("Error uploading file");
     } finally {
       setUploading(false);
+      e.target.value = "";
     }
   };
 
-  const handleRemove = () => {
-    setConfig({
-      ...config,
-      heroImageUrl: "",
-    });
+  const handleRemoveAll = () => {
+    applyImagesToConfig([]);
+    setCurrentIndex(0);
   };
+
+  const handleRemoveOne = (idx: number) => {
+    const next = heroImages.filter((_, i) => i !== idx);
+    applyImagesToConfig(next);
+    if (idx <= currentIndex) {
+      setCurrentIndex((prev) => Math.max(0, prev - 1));
+    }
+  };
+
+  const handlePrev = () => {
+    if (heroImages.length <= 1) return;
+    setCurrentIndex((prev) =>
+      prev === 0 ? heroImages.length - 1 : prev - 1
+    );
+  };
+
+  const handleNext = () => {
+    if (heroImages.length <= 1) return;
+    setCurrentIndex((prev) =>
+      prev === heroImages.length - 1 ? 0 : prev + 1
+    );
+  };
+
+  const currentImage = heroImages[currentIndex];
 
   return (
     <div className="max-w-5xl mx-auto bg-white p-4 sm:p-6 rounded-2xl border border-slate-200 space-y-6">
       <div className="flex flex-col md:grid md:grid-cols-2 gap-6">
+        {/* LEFT: Controls */}
         <div className="space-y-4">
           <div>
             <h3 className="text-sm md:text-base font-semibold text-slate-900">
               Hero Banner
             </h3>
             <p className="text-[11px] md:text-xs text-slate-500 mt-1">
-              รูปนี้จะแสดงเต็มกว้างด้านบนสุดของหน้าเว็บ เป็น Banner อย่างเดียว
-              ไม่มีตัวหนังสือทับ
+              รูปเหล่านี้จะแสดงด้านบนสุดของหน้าเว็บแบบสไลด์ สามารถอัปโหลดได้หลายรูป
+              และผู้ใช้เลื่อนซ้ายขวาเพื่อดูรูปได้
             </p>
           </div>
 
           <div className="space-y-2">
             <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-              อัปโหลดรูป Hero (แนะนำ 1920×900)
+              อัปโหลดรูป Hero (แนะนำ 1920×900, สามารถเลือกหลายรูปได้)
             </label>
 
             <input
               type="file"
               accept="image/*"
+              multiple
               onChange={handleUpload}
               className="w-full text-xs sm:text-sm cursor-pointer file:mr-3 file:px-3 file:py-1.5 file:rounded-lg file:border file:border-slate-200 file:bg-slate-50 file:text-xs file:font-medium hover:file:bg-slate-100"
             />
@@ -566,17 +625,59 @@ const HeroEditorView = ({ config, setConfig }: HeroEditorProps) => {
               <p className="text-xs text-sky-600">⏳ กำลังอัปโหลด...</p>
             )}
 
-            {config.heroImageUrl && !uploading && (
+            {heroImages.length > 0 && !uploading && (
               <button
                 type="button"
                 className="text-xs text-red-600 underline mt-1"
-                onClick={handleRemove}
+                onClick={handleRemoveAll}
               >
-                ลบรูปภาพปัจจุบัน
+                ลบรูป Hero ทั้งหมด
               </button>
             )}
           </div>
 
+          {heroImages.length > 0 && (
+            <div className="space-y-2 pt-2">
+              <p className="text-[11px] font-semibold text-slate-700">
+                รายการรูปทั้งหมด ({heroImages.length} รูป)
+              </p>
+              <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto">
+                {heroImages.map((url, idx) => (
+                  <button
+                    key={url + idx}
+                    type="button"
+                    onClick={() => setCurrentIndex(idx)}
+                    className={`relative w-16 h-10 rounded-lg overflow-hidden border ${
+                      idx === currentIndex
+                        ? "border-sky-500 ring-2 ring-sky-200"
+                        : "border-slate-200"
+                    }`}
+                  >
+                    <img
+                      src={url}
+                      alt={`hero-${idx + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                    <span className="absolute bottom-0 left-0 right-0 text-[10px] bg-black/50 text-white text-center">
+                      {idx + 1}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemoveOne(idx);
+                      }}
+                      className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-[10px] text-white flex items-center justify-center"
+                    >
+                      ×
+                    </button>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* meta text เดิม */}
           <div className="mt-4 space-y-3">
             <p className="text-[11px] font-semibold text-slate-500">
               (Optional) Meta Text — เผื่อใช้ที่อื่นภายหลัง
@@ -614,20 +715,52 @@ const HeroEditorView = ({ config, setConfig }: HeroEditorProps) => {
           </div>
         </div>
 
+        {/* RIGHT: Preview */}
         <div className="pt-2 md:pt-0">
           <p className="text-xs font-medium text-slate-700 mb-2">
             Preview (เหมือนหน้าแรกจริง)
           </p>
 
           <div className="relative bg-slate-100 border border-sky-200 rounded-2xl overflow-hidden">
-            {config.heroImageUrl ? (
-              <div className="relative w-full aspect-[16/9]">
+            {heroImages.length > 0 ? (
+              <div className="relative w-full aspect-[16/9] bg-black/5">
                 <img
-                  src={config.heroImageUrl}
+                  src={currentImage}
                   alt="Hero Preview"
                   className="absolute inset-0 w-full h-full object-cover"
                 />
-                <div className="absolute inset-0 bg-black/30" />
+
+                {heroImages.length > 1 && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={handlePrev}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 z-10 w-7 h-7 rounded-full bg-black/40 text-white text-sm flex items-center justify-center"
+                    >
+                      ‹
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleNext}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 z-10 w-7 h-7 rounded-full bg-black/40 text-white text-sm flex items-center justify-center"
+                    >
+                      ›
+                    </button>
+
+                    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+                      {heroImages.map((_, i) => (
+                        <span
+                          key={i}
+                          className={`h-1.5 rounded-full transition-all ${
+                            i === currentIndex
+                              ? "w-4 bg-white"
+                              : "w-2 bg-white/60"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  </>
+                )}
               </div>
             ) : (
               <div className="relative w-full aspect-[16/9] bg-gradient-to-br from-sky-50 via-white to-sky-50 flex flex-col items-center justify-center">
@@ -645,6 +778,7 @@ const HeroEditorView = ({ config, setConfig }: HeroEditorProps) => {
     </div>
   );
 };
+
 
 type HomeGalleryEditorProps = {
   config: SiteConfig;

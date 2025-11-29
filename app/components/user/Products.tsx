@@ -1,6 +1,7 @@
 "use client";
 
 import type { ProductItem } from "@/lib/server/siteData";
+import Image from "next/image";
 
 type ProductsSectionProps = {
   products: ProductItem[];
@@ -12,7 +13,7 @@ export default function ProductsSection({ products }: ProductsSectionProps) {
   return (
     <section id="products" className="py-16 sm:py-20 bg-white px-4 sm:px-6">
       <div className="max-w-7xl mx-auto">
-        <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-slate-900 mb-6 sm:mb-8">
+        <h2 className="text-2xl sm:3xl md:text-4xl lg:text-5xl font-bold text-slate-900 mb-6 sm:mb-8">
           สินค้าแนะนำ
         </h2>
 
@@ -24,11 +25,15 @@ export default function ProductsSection({ products }: ProductsSectionProps) {
             >
               {p.imageUrl && (
                 <figure className="h-44 sm:h-52 overflow-hidden rounded-t-2xl">
-                  <img
-                    src={p.imageUrl}
-                    alt={p.name}
-                    className="w-full h-full object-cover"
-                  />
+                  <div className="relative w-full h-full">
+                    <Image
+                      src={p.imageUrl}
+                      alt={p.name}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 768px) 100vw, 320px"
+                    />
+                  </div>
                 </figure>
               )}
 

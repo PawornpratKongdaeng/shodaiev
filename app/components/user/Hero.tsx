@@ -1,31 +1,106 @@
+// app/components/user/Hero.tsx
 "use client";
 
+import { useState, useEffect, useCallback } from "react";
+import Image from "next/image";
+
 type HeroProps = {
-  imageUrl?: string;
+  // รองรับทั้ง string เดี่ยว (ของเดิม) หรือ array หลายรูปจาก Admin
+  imageUrl: string | string[];
 };
 
 export default function Hero({ imageUrl }: HeroProps) {
-  return (
-    <section className="relative w-full min-h-[60vh] sm:min-h-[70vh] lg:min-h-[80vh] overflow-hidden">
-      {imageUrl ? (
-        <div className="absolute inset-0">
-          <img
-            src={imageUrl}
-            alt="Hero Banner"
-            className="w-full h-full object-cover"
-          />
-        </div>
-      ) : (
-        <div
-          className="absolute inset-0"
-          style={{
-            backgroundImage:
-              "linear-gradient(to bottom, var(--color-primary-soft), var(--color-bg))",
-          }}
-        />
-      )}
+  // แปลงให้กลายเป็น array เสมอ
+  const imageUrls = Array.isArray(imageUrl)
+    ? imageUrl.filter(Boolean)
+    : imageUrl
+    ? [imageUrl]
+    : [];
 
-      <div className="relative z-10 w-full h-full" />
+  // ถ้าไม่มีรูปเลย ไม่ต้องแสดง
+  if (imageUrls.length === 0) return null;
+
+  const total = imageUrls.length;
+  const [index, setIndex] = useState(0);
+
+  const goNext = useCallback(() => {
+    setIndex((i) => (i + 1) % total);
+  }, [total]);
+
+  const goPrev = useCallback(() => {
+    setIndex((i) => (i === 0 ? total - 1 : i - 1));
+  }, [total]);
+
+  // Auto slide ทุก 5 วินาที (ถ้ามีมากกว่า 1 รูป)
+  useEffect(() => {
+    if (total <= 1) return;
+    const timer = setInterval(goNext, 5000);
+    return () => clearInterval(timer);
+  }, [goNext, total]);
+
+  return (
+    <section className="w-full bg-[var(--color-bg)] pt-6 sm:pt-10">
+      <div className="w-full relative overflow-hidden">
+        {/* แถบสไลด์ */}
+        <div
+          className="flex transition-transform duration-700 ease-out"
+          style={{ transform: `translateX(-${index * 100}%)` }}
+        >
+          {imageUrls.map((src, i) => (
+            <div key={i} className="w-full flex-shrink-0">
+              <Image
+                src={src}
+                alt={`ShodaiEV banner ${i + 1}`}
+                width={1920}
+                height={700}
+                priority={i === 0}
+                className="w-full h-auto object-contain"
+                sizes="100vw"
+              />
+            </div>
+          ))}
+        </div>
+
+        {/* ปุ่มเลื่อนซ้าย/ขวา */}
+        {total > 1 && (
+          <>
+            <button
+              type="button"
+              onClick={goPrev}
+              className="absolute left-4 top-1/2 -translate-y-1/2 z-10
+                         w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center
+                         rounded-full bg-black/40 hover:bg-black/60 text-white text-xl"
+            >
+              ‹
+            </button>
+
+            <button
+              type="button"
+              onClick={goNext}
+              className="absolute right-4 top-1/2 -translate-y-1/2 z-10
+                         w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center
+                         rounded-full bg-black/40 hover:bg-black/60 text-white text-xl"
+            >
+              ›
+            </button>
+          </>
+        )}
+
+        {/* จุดบอกหน้า */}
+        {total > 1 && (
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex gap-2">
+            {imageUrls.map((_, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => setIndex(i)}
+                className={`w-2.5 h-2.5 rounded-full border border-white/70 transition
+                  ${index === i ? "bg-white" : "bg-white/30"}`}
+              />
+            ))}
+          </div>
+        )}
+      </div>
     </section>
   );
 }

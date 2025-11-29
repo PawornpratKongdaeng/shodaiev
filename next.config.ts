@@ -1,6 +1,25 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  // ... config อื่น ๆ ของโปรเจกต์
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "shodaiev.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "www.shodaiev.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "kuqizsvhpesa44qy.public.blob.vercel-storage.com",
+        pathname: "/**",
+      },
+    ],
+  },
 
   async redirects() {
     return [
