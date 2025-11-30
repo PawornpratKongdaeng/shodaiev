@@ -13,7 +13,7 @@ export default function AdminLoginPage() {
   const [error, setError] = useState("");
 
   // อ่าน callback จาก query string ด้วย window.location (ฝั่ง client ล้วน)
-  const [callback, setCallback] = useState<string>("/admin?key=shodai-admin-2025-Sa180930@");
+  const [callback, setCallback] = useState<string>("/admin");
 
   useEffect(() => {
     if (typeof window === "undefined") return;
