@@ -1,8 +1,10 @@
 // lib/server/mongodb.ts
 import { MongoClient, Db } from "mongodb";
+import { attachDatabasePool } from "@vercel/functions";
 
 const uri = process.env.MONGODB_URI!;
 const dbName = process.env.MONGODB_DB || "shodaievv";
+
 
 let client: MongoClient | null = null;
 let clientPromise: Promise<MongoClient> | null = null;
