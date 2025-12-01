@@ -37,7 +37,7 @@ export default function Hero({ imageUrl }: HeroProps) {
   }, [goNext, total]);
 
   return (
-    <section className="w-full bg-[var(--color-bg)] pt-[3px] sm:pt-[3px]">
+    <section className="w-full h-auto object-cover bg-[var(--color-bg)] pt-0 sm:pt-0">
       <div className="relative w-full overflow-hidden">
         {/* แถบสไลด์เต็มจอ */}
         <div
@@ -48,13 +48,16 @@ export default function Hero({ imageUrl }: HeroProps) {
             <div key={src + i} className="w-full flex-shrink-0">
               <div className="relative w-full h-[250px] sm:h-[260px] md:h-[340px] lg:h-[850px]">
                 <Image
-                  src={src}
-                  alt={`ShodaiEV banner ${i + 1}`}
-                  fill
-                  priority={i === 0}
-                  className="object-cover" // เต็มจอ ตัดส่วนเกินเล็กน้อย
-                  sizes="100vw"
-                />
+  src={src}
+  alt="ShodaiEV Banner"
+  width={1600}
+  height={800}
+  quality={70}
+  priority
+  loading="eager"
+  className="w-full h-auto object-cover"
+/>
+
               </div>
             </div>
           ))}

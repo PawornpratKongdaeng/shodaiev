@@ -90,7 +90,7 @@ export default async function HomePage() {
 
       <h1 className="sr-only">
         {data.seoTitleHome ||
-          "ShodaiEV บริการซ่อมรถไฟฟ้า มอเตอร์ไซค์ไฟฟ้า และสามล้อไฟฟ้า บริการถึงบ้าน"}
+          " ซ่อมมอเตอร์ไซค์ไฟฟ้า | ซ่อมรถไฟฟ้า 3 ล้อถึงบ้าน | เปลี่ยนแบตเตอรี่จักรยานไฟฟ้า"}
       </h1>
 
       <Hero imageUrl={heroImages} />
