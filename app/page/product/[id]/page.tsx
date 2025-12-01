@@ -20,31 +20,46 @@ type ProductDetailPageParams = {
   id: string;
 };
 
+// ✅ ใน Next เวอร์ชันนี้ params เป็น Promise
 type ProductDetailPageProps = {
-  params: ProductDetailPageParams;
+  params: Promise<ProductDetailPageParams>;
 };
 
 export const dynamic = "force-dynamic";
 
-// ---------- SEO ----------
+// helper ดึง id จาก props.params (ที่เป็น Promise)
+async function getDecodedIdFromProps(
+  props: ProductDetailPageProps
+): Promise<string> {
+  try {
+    const resolved = await props.params; // ✅ unwrap promise
+    if (!resolved || typeof resolved.id !== "string") return "";
+    return decodeURIComponent(resolved.id);
+  } catch {
+    return "";
+  }
+}
+
 export async function generateMetadata(
-  { params }: ProductDetailPageProps
+  props: ProductDetailPageProps
 ): Promise<Metadata> {
-  const id = String(params?.id ?? "");
+  const decodedId = await getDecodedIdFromProps(props);
 
   const data: SiteConfig = await loadSiteData();
   const topics: TopicItem[] = Array.isArray(data.topics)
-    ? data.topics
+    ? (data.topics as TopicItem[])
     : [];
   const details: ServiceDetailItem[] = Array.isArray(data.serviceDetails)
-    ? data.serviceDetails
+    ? (data.serviceDetails as ServiceDetailItem[])
     : [];
 
-  const topic = topics.find((t) => t.id === id);
+  const topic = topics.find((t) => t.id === decodedId);
 
   if (!topic) {
     return {
-      title: { absolute: "ShodaiEV" },
+      title: {
+        absolute: "ShodaiEV",
+      },
       description: "ไม่พบบริการที่คุณต้องการ",
     };
   }
@@ -85,11 +100,8 @@ export async function generateMetadata(
   };
 }
 
-// ---------- PAGE ----------
-export default async function ProductDetailPage({
-  params,
-}: ProductDetailPageProps) {
-  const id = String(params?.id ?? "");
+export default async function ProductDetailPage(props: ProductDetailPageProps) {
+  const decodedId = await getDecodedIdFromProps(props);
 
   const data = await loadSiteData();
   const theme = data.theme ?? defaultTheme;
@@ -102,7 +114,7 @@ export default async function ProductDetailPage({
     ? (data.serviceDetails as ServiceDetailItem[])
     : [];
 
-  const topic = topics.find((t) => t.id === id);
+  const topic = topics.find((t) => t.id === decodedId);
 
   if (!topic) {
     return notFound();
@@ -123,9 +135,7 @@ export default async function ProductDetailPage({
     "@type": "Service",
     name: title,
     description:
-      description ||
-      summary ||
-      "บริการจาก ShodaiEV",
+      description || summary || "บริการจาก ShodaiEV",
     provider: {
       "@type": "LocalBusiness",
       name: data.businessName || "ShodaiEV",
@@ -151,7 +161,7 @@ export default async function ProductDetailPage({
 
       <Header phone={data.phone ?? ""} line={data.line ?? ""} />
 
-      {/* Hero / breadcrumb */}
+      {/* breadcrumb + title */}
       <section className="bg-[var(--color-surface)] py-8 sm:py-10 md:py-12 px-4 sm:px-6 border-b border-[var(--color-primary-soft)]">
         <div className="max-w-5xl mx-auto space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3 text-xs sm:text-sm text-[var(--color-text)]/70">
@@ -195,10 +205,10 @@ export default async function ProductDetailPage({
         </div>
       </section>
 
-      {/* Content */}
+      {/* main content */}
       <section className="py-8 sm:py-10 px-4 sm:px-6 bg-[var(--color-bg)]">
         <div className="max-w-5xl mx-auto grid gap-8 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-          {/* Images */}
+          {/* left: images */}
           <div className="space-y-4">
             <h2 className="text-base sm:text-lg font-semibold mb-2">
               รูปภาพตัวอย่างงาน / บริการ
@@ -265,7 +275,7 @@ export default async function ProductDetailPage({
             )}
           </div>
 
-          {/* Right side info */}
+          {/* right: text */}
           <aside className="space-y-7">
             <div className="bg-[var(--color-bg)] rounded-xl border border-[var(--color-primary-soft)] p-4 sm:p-5 shadow-sm">
               <h2 className="text-base sm:text-lg font-semibold mb-2">
@@ -312,7 +322,75 @@ export default async function ProductDetailPage({
         </div>
       </section>
 
-      {/* Lightbox – main images */}
+      {/* sections (sub services) */}
+      {sections.length > 0 && (
+        <section className="pb-10 px-4 sm:px-6 bg-[var(--color-bg)]">
+          <div className="max-w-5xl mx-auto space-y-4">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <h2 className="text-lg sm:text-xl font-semibold">
+                รายละเอียดแยกตามหมวดงานในบริการนี้
+              </h2>
+              <span className="text-[11px] sm:text-xs px-3 py-1 rounded-full bg-[var(--color-surface)] text-[var(--color-text)]/80 border border-[var(--color-primary-soft)]">
+                มี {sections.length} หมวดงาน
+              </span>
+            </div>
+
+            <div className="space-y-4">
+              {sections.map((sec, idx) => {
+                const secImages = sec.images ?? [];
+                return (
+                  <article
+                    key={sec.id || idx}
+                    className="bg-[var(--color-bg)] border border-[var(--color-primary-soft)] rounded-xl p-4 sm:p-5 shadow-sm flex flex-col gap-3"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-[11px] uppercase tracking-[0.18em] text-[var(--color-primary)] mb-1">
+                          หมวดงาน #{idx + 1}
+                        </p>
+                        <h3 className="text-base sm:text-lg font-semibold">
+                          {sec.title || `หัวข้อย่อยที่ ${idx + 1}`}
+                        </h3>
+                      </div>
+                    </div>
+
+                    {sec.description && (
+                      <p className="text-xs sm:text-sm text-[var(--color-text)]/80 whitespace-pre-line">
+                        {sec.description}
+                      </p>
+                    )}
+
+                    {secImages.length > 0 && (
+                      <div className="space-y-2">
+                        <p className="text-[11px] sm:text-xs text-[var(--color-primary)] font-medium">
+                          รูปตัวอย่างงานหมวดนี้ ({secImages.length})
+                        </p>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                          {secImages.map((url, i) => (
+                            <a
+                              key={`${sec.id || idx}-${url}-${i}`}
+                              href={`#sec-${idx}-${i}`}
+                              className="overflow-hidden rounded-lg border border-[var(--color-primary-soft)] bg-[var(--color-surface)] cursor-pointer"
+                            >
+                              <img
+                                src={url}
+                                alt={`${sec.title || "sub-service"}-${i + 1}`}
+                                className="w-full h-24 sm:h-28 object-cover hover:scale-105 transition-transform"
+                              />
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </article>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* lightbox สำหรับ main images */}
       {images.map((url, index) => {
         const prevIndex = index === 0 ? images.length - 1 : index - 1;
         const nextIndex = index === images.length - 1 ? 0 : index + 1;
@@ -363,7 +441,7 @@ export default async function ProductDetailPage({
         );
       })}
 
-      {/* Lightbox – section images */}
+      {/* lightbox สำหรับ section images */}
       {sections.length > 0 &&
         sections.map((sec, sIdx) => {
           const secImages = sec.images ?? [];

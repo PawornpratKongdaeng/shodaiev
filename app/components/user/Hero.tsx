@@ -46,18 +46,17 @@ export default function Hero({ imageUrl }: HeroProps) {
         >
           {imageUrls.map((src, i) => (
             <div key={src + i} className="w-full flex-shrink-0">
-              <div className="relative w-full h-[250px] sm:h-[260px] md:h-[340px] lg:h-[850px]">
+              <div className="relative w-full h-[300px] sm:h-[300px] md:h-[300px] lg:h-[1200px] full">
                 <Image
-  src={src}
-  alt="ShodaiEV Banner"
-  width={1600}
-  height={800}
-  quality={70}
-  priority
-  loading="eager"
-  className="w-full h-auto object-cover"
-/>
-
+                  src={src}
+                  alt="ShodaiEV Banner"
+                  width={1600}
+                  height={900}
+                  quality={70}
+                  priority
+                  loading="eager"
+                  className="w-full h-auto object-cover"
+                />
               </div>
             </div>
           ))}

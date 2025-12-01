@@ -2284,17 +2284,6 @@ function AdminPageInner() {
   const [notice, setNotice] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState<SectionId>("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const buildHeroPayload = (config: SiteConfig) => ({
-  heroTitle: config.heroTitle,
-  heroSubtitle: config.heroSubtitle,
-  heroImageUrl: config.heroImageUrl,
-  phone: config.phone,
-  line: config.line,
-  lineUrl: config.lineUrl,
-  facebook: config.facebook,
-  mapUrl: config.mapUrl,
-});
-
 
   useEffect(() => {
     const fetchConfig = async () => {
@@ -2316,73 +2305,107 @@ function AdminPageInner() {
     fetchConfig();
   }, []);
 
-  const handleSave = async () => {
-  setSaving(true);
-  try {
-    const heroPayload = buildHeroPayload(config);
-    const homeGalleryPayload = buildHomeGalleryPayload(config);
-    const servicesPayload = buildServicesPayload(config);
-    const topicsPayload = buildTopicsPayload(config);
-    const serviceDetailPayload = buildServiceDetailPayload(config);
-    const contactPayload = buildContactPayload(config);
-    const themePayload = buildThemePayload(config);
+    const handleSave = async () => {
+    setSaving(true);
+    try {
+      let res: Response | null = null;
 
-    const requests = [
-      fetch("/api/admin/hero", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(heroPayload),
-      }),
-      fetch("/api/admin/homeGallery", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(homeGalleryPayload),
-      }),
-      fetch("/api/admin/services", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(servicesPayload),
-      }),
-      fetch("/api/admin/topics", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(topicsPayload),
-      }),
-      fetch("/api/admin/serviceDetail", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(serviceDetailPayload),
-      }),
-      fetch("/api/admin/contact", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(contactPayload),
-      }),
-      fetch("/api/admin/theme", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(themePayload),
-      }),
-    ];
+      // เลือกยิง API ตาม tab ที่เปิดอยู่
+      switch (activeSection) {
+        case "hero": {
+          const payload = buildHeroPayload(config);
+          res = await fetch("/api/admin/hero", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          break;
+        }
 
-    const responses = await Promise.all(requests);
-    const failed = responses.filter((r) => !r.ok);
+        case "homeGallery": {
+          const payload = buildHomeGalleryPayload(config);
+          res = await fetch("/api/admin/homeGallery", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          break;
+        }
 
-    if (failed.length > 0) {
-      console.error("Some save requests failed:", failed);
-      throw new Error("Some sections failed to save");
+        case "services": {
+          const payload = buildServicesPayload(config);
+          res = await fetch("/api/admin/services", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          break;
+        }
+
+        case "topics": {
+          const payload = buildTopicsPayload(config);
+          res = await fetch("/api/admin/topics", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          break;
+        }
+
+        case "serviceDetail": {
+          const payload = buildServiceDetailPayload(config);
+          res = await fetch("/api/admin/serviceDetail", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          break;
+        }
+
+        case "contact": {
+          const payload = buildContactPayload(config);
+          res = await fetch("/api/admin/contact", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          break;
+        }
+
+        case "theme": {
+          const payload = buildThemePayload(config);
+          res = await fetch("/api/admin/theme", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          break;
+        }
+
+        // dashboard หรือกรณีอื่น ๆ ยังไม่ต้อง save อะไร
+        default: {
+          setNotice("หน้านี้ไม่มีข้อมูลให้บันทึก");
+          setTimeout(() => setNotice(null), 2500);
+          setSaving(false);
+          return;
+        }
+      }
+
+      if (!res || !res.ok) {
+        throw new Error("Save failed");
+      }
+
+      setNotice("บันทึกข้อมูลส่วนนี้เรียบร้อยแล้ว");
+      setTimeout(() => setNotice(null), 3000);
+    } catch (err) {
+      console.error(err);
+      setNotice("บันทึกข้อมูลไม่สำเร็จ กรุณาลองใหม่");
+      setTimeout(() => setNotice(null), 4000);
+    } finally {
+      setSaving(false);
     }
+  };
 
-    setNotice("บันทึกข้อมูลเรียบร้อยแล้ว");
-    setTimeout(() => setNotice(null), 3000);
-  } catch (err) {
-    console.error(err);
-    setNotice("บันทึกข้อมูลไม่สำเร็จ กรุณาลองใหม่");
-    setTimeout(() => setNotice(null), 4000);
-  } finally {
-    setSaving(false);
-  }
-};
 
 
   if (loading) {
