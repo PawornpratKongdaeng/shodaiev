@@ -2,27 +2,28 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export function middleware(req: NextRequest) {
-  const { pathname, searchParams } = req.nextUrl;
+  const { pathname } = req.nextUrl;
 
-  const isAdminPath =
-    pathname === "/admin" || pathname.startsWith("/admin/");
-
-  if (!isAdminPath) {
+  // 1) อนุญาตให้เข้าหน้า login เสมอ
+  if (pathname.startsWith("/admin/login")) {
     return NextResponse.next();
   }
 
-  const adminSession = req.cookies.get("admin_session")?.value;
+  // 2) เฉพาะ path /admin เท่านั้นที่ต้องตรวจ cookie
+  if (pathname.startsWith("/admin")) {
+    const session = req.cookies.get("admin_session")?.value;
 
-  if (!adminSession) {
-    const loginUrl = req.nextUrl.clone();
-    loginUrl.pathname = "/admin/login";
-    loginUrl.searchParams.set("callback", pathname + req.nextUrl.search);
-    return NextResponse.redirect(loginUrl);
+    if (!session) {
+      const loginUrl = new URL("/admin/login", req.url);
+      loginUrl.searchParams.set("callback", pathname);
+      return NextResponse.redirect(loginUrl);
+    }
   }
 
   return NextResponse.next();
 }
 
+// Match เฉพาะ /admin ไม่รวม /api
 export const config = {
   matcher: ["/admin/:path*"],
 };

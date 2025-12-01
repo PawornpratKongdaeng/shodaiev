@@ -1,3 +1,4 @@
+// app/admin/page.tsx
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -10,7 +11,6 @@ import type {
 } from "@/lib/server/siteData";
 import { v4 as uuid } from "uuid";
 
-const ADMIN_KEY = process.env.NEXT_PUBLIC_ADMIN_KEY;
 
 type SectionId =
   | "dashboard"
@@ -47,6 +47,7 @@ const createEmptyConfig = (): SiteConfig => ({
   seoServiceDetailDescriptionSuffix: "",
   seoServiceDetailTitlePrefix: "",
   homeGallery: [],
+  theme: undefined,
 });
 
 type AdminSidebarProps = {
@@ -497,29 +498,22 @@ const HeroEditorView = ({ config, setConfig }: HeroEditorProps) => {
   const [uploading, setUploading] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  const heroImages: string[] = Array.isArray(
-    (config as any).heroImages
-  )
-    ? ((config as any).heroImages as string[]).filter(Boolean)
-    : config.heroImageUrl
-    ? [config.heroImageUrl]
+  const heroImages: string[] = Array.isArray(config.heroImageUrl)
+    ? config.heroImageUrl
     : [];
 
   useEffect(() => {
-    // ถ้าลบรูปจน index เกิน ให้ดึงกลับมาใน range
     if (currentIndex >= heroImages.length) {
       setCurrentIndex(Math.max(0, heroImages.length - 1));
     }
   }, [heroImages.length, currentIndex]);
 
   const applyImagesToConfig = (images: string[]) => {
-    setConfig({
+    const updated: SiteConfig = {
       ...config,
       heroImageUrl: images[0] || "",
-      // ถ้า SiteConfig ยังไม่มี heroImages ให้เพิ่มใน type ด้วย
-      ...(config as any),
-      heroImages: images,
-    } as SiteConfig & { heroImages?: string[] });
+    };
+    setConfig(updated);
   };
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -534,30 +528,43 @@ const HeroEditorView = ({ config, setConfig }: HeroEditorProps) => {
         const formData = new FormData();
         formData.append("file", file);
 
-        const res = await fetch("/api/admin/upload", {
-          method: "POST",
-          body: formData,
-        });
+        let json: any = null;
 
-        const json = await res.json();
-        if (!json.ok || !json.url) {
-          console.error("Upload failed for", file.name);
+        try {
+          const res = await fetch("/api/admin/upload", {
+            method: "POST",
+            body: formData,
+          });
+
+          const text = await res.text();
+          try {
+            json = JSON.parse(text);
+          } catch {
+            console.error("Upload route returned non-JSON:", text);
+            continue;
+          }
+        } catch (uploadErr) {
+          console.error("Upload failed:", uploadErr);
           continue;
         }
+
+        if (!json?.ok || !json?.url) {
+          console.error("Upload failed for", file.name, json);
+          continue;
+        }
+
         newUrls.push(json.url);
       }
 
       if (newUrls.length === 0) {
-        alert("Upload failed.");
+        alert("⛔ Upload failed.");
         return;
       }
 
       const merged = [...heroImages, ...newUrls];
       applyImagesToConfig(merged);
+
       if (heroImages.length === 0) setCurrentIndex(0);
-    } catch (error) {
-      console.error(error);
-      alert("Error uploading file");
     } finally {
       setUploading(false);
       e.target.value = "";
@@ -572,6 +579,7 @@ const HeroEditorView = ({ config, setConfig }: HeroEditorProps) => {
   const handleRemoveOne = (idx: number) => {
     const next = heroImages.filter((_, i) => i !== idx);
     applyImagesToConfig(next);
+
     if (idx <= currentIndex) {
       setCurrentIndex((prev) => Math.max(0, prev - 1));
     }
@@ -596,21 +604,19 @@ const HeroEditorView = ({ config, setConfig }: HeroEditorProps) => {
   return (
     <div className="max-w-5xl mx-auto bg-white p-4 sm:p-6 rounded-2xl border border-slate-200 space-y-6">
       <div className="flex flex-col md:grid md:grid-cols-2 gap-6">
-        {/* LEFT: Controls */}
         <div className="space-y-4">
           <div>
             <h3 className="text-sm md:text-base font-semibold text-slate-900">
               Hero Banner
             </h3>
             <p className="text-[11px] md:text-xs text-slate-500 mt-1">
-              รูปเหล่านี้จะแสดงด้านบนสุดของหน้าเว็บแบบสไลด์ สามารถอัปโหลดได้หลายรูป
-              และผู้ใช้เลื่อนซ้ายขวาเพื่อดูรูปได้
+              รูปเหล่านี้จะแสดงบนส่วนบนสุดของหน้าเว็บแบบสไลด์ สามารถอัปได้หลายรูป
             </p>
           </div>
 
           <div className="space-y-2">
             <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-              อัปโหลดรูป Hero (แนะนำ 1920×900, สามารถเลือกหลายรูปได้)
+              อัปโหลดรูป (แนะนำ 1920×900)
             </label>
 
             <input
@@ -618,7 +624,7 @@ const HeroEditorView = ({ config, setConfig }: HeroEditorProps) => {
               accept="image/*"
               multiple
               onChange={handleUpload}
-              className="w-full text-xs sm:text-sm cursor-pointer file:mr-3 file:px-3 file:py-1.5 file:rounded-lg file:border file:border-slate-200 file:bg-slate-50 file:text-xs file:font-medium hover:file:bg-slate-100"
+              className="w-full text-xs cursor-pointer file:mr-3 file:px-3 file:py-1.5 file:rounded-lg file:border file:border-slate-200 file:bg-slate-50 file:text-xs file:font-medium hover:file:bg-slate-100"
             />
 
             {uploading && (
@@ -631,7 +637,7 @@ const HeroEditorView = ({ config, setConfig }: HeroEditorProps) => {
                 className="text-xs text-red-600 underline mt-1"
                 onClick={handleRemoveAll}
               >
-                ลบรูป Hero ทั้งหมด
+                ลบรูปทั้งหมด
               </button>
             )}
           </div>
@@ -639,8 +645,9 @@ const HeroEditorView = ({ config, setConfig }: HeroEditorProps) => {
           {heroImages.length > 0 && (
             <div className="space-y-2 pt-2">
               <p className="text-[11px] font-semibold text-slate-700">
-                รายการรูปทั้งหมด ({heroImages.length} รูป)
+                รูปทั้งหมด ({heroImages.length})
               </p>
+
               <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto">
                 {heroImages.map((url, idx) => (
                   <button
@@ -658,9 +665,11 @@ const HeroEditorView = ({ config, setConfig }: HeroEditorProps) => {
                       alt={`hero-${idx + 1}`}
                       className="w-full h-full object-cover"
                     />
+
                     <span className="absolute bottom-0 left-0 right-0 text-[10px] bg-black/50 text-white text-center">
                       {idx + 1}
                     </span>
+
                     <button
                       type="button"
                       onClick={(e) => {
@@ -677,15 +686,10 @@ const HeroEditorView = ({ config, setConfig }: HeroEditorProps) => {
             </div>
           )}
 
-          {/* meta text เดิม */}
           <div className="mt-4 space-y-3">
-            <p className="text-[11px] font-semibold text-slate-500">
-              (Optional) Meta Text — เผื่อใช้ที่อื่นภายหลัง
-            </p>
-
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                Main Title (ไม่ได้แสดงบนหน้าแรกตอนนี้)
+                Main Title
               </label>
               <input
                 type="text"
@@ -694,13 +698,12 @@ const HeroEditorView = ({ config, setConfig }: HeroEditorProps) => {
                   setConfig({ ...config, heroTitle: e.target.value })
                 }
                 className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-sky-300 bg-white"
-                placeholder="เช่น ร้านซ่อมจักรยานไฟฟ้า ครบวงจร"
               />
             </div>
 
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                Subtitle (ไม่ได้แสดงบนหน้าแรกตอนนี้)
+                Subtitle
               </label>
               <textarea
                 value={config.heroSubtitle || ""}
@@ -709,16 +712,14 @@ const HeroEditorView = ({ config, setConfig }: HeroEditorProps) => {
                 }
                 rows={3}
                 className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-sky-300 resize-none bg-white"
-                placeholder="ข้อความสั้น ๆ อธิบายจุดเด่นธุรกิจ..."
               />
             </div>
           </div>
         </div>
 
-        {/* RIGHT: Preview */}
         <div className="pt-2 md:pt-0">
           <p className="text-xs font-medium text-slate-700 mb-2">
-            Preview (เหมือนหน้าแรกจริง)
+            Preview
           </p>
 
           <div className="relative bg-slate-100 border border-sky-200 rounded-2xl overflow-hidden">
@@ -726,7 +727,6 @@ const HeroEditorView = ({ config, setConfig }: HeroEditorProps) => {
               <div className="relative w-full aspect-[16/9] bg-black/5">
                 <img
                   src={currentImage}
-                  alt="Hero Preview"
                   className="absolute inset-0 w-full h-full object-cover"
                 />
 
@@ -735,14 +735,17 @@ const HeroEditorView = ({ config, setConfig }: HeroEditorProps) => {
                     <button
                       type="button"
                       onClick={handlePrev}
-                      className="absolute left-3 top-1/2 -translate-y-1/2 z-10 w-7 h-7 rounded-full bg-black/40 text-white text-sm flex items-center justify-center"
+                      className="absolute left-3 top-1/2 -translate-y-1/2 z-10 
+                      w-7 h-7 rounded-full bg-black/40 text-white text-sm flex items-center justify-center"
                     >
                       ‹
                     </button>
+
                     <button
                       type="button"
                       onClick={handleNext}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 z-10 w-7 h-7 rounded-full bg-black/40 text-white text-sm flex items-center justify-center"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 z-10 
+                      w-7 h-7 rounded-full bg-black/40 text-white text-sm flex items-center justify-center"
                     >
                       ›
                     </button>
@@ -751,7 +754,7 @@ const HeroEditorView = ({ config, setConfig }: HeroEditorProps) => {
                       {heroImages.map((_, i) => (
                         <span
                           key={i}
-                          className={`h-1.5 rounded-full transition-all ${
+                          className={`h-1.5 rounded-full ${
                             i === currentIndex
                               ? "w-4 bg-white"
                               : "w-2 bg-white/60"
@@ -2278,9 +2281,6 @@ const ServiceDetailEditorView = ({
   );
 };
 
-
-/* ---------- ส่วนหลักของหน้า Admin (โหลด config + layout) ---------- */
-
 function AdminPageInner() {
   const [config, setConfig] = useState<SiteConfig>(createEmptyConfig());
   const [loading, setLoading] = useState(true);
@@ -2292,9 +2292,9 @@ function AdminPageInner() {
   useEffect(() => {
     const fetchConfig = async () => {
       try {
-        const res = await fetch("/api/admin/site");
+        const res = await fetch("/api/admin/config");
         if (!res.ok) throw new Error("Failed to load config");
-        const json = await res.json();
+        const json = (await res.json()) as SiteConfig;
         setConfig({
           ...createEmptyConfig(),
           ...json,
@@ -2312,7 +2312,7 @@ function AdminPageInner() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const res = await fetch("/api/admin/site", {
+      const res = await fetch("/api/admin/config", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(config),
@@ -2374,31 +2374,24 @@ function AdminPageInner() {
       <main className="pt-20 md:pt-20 md:ml-64">
         <div className="p-3 sm:p-4 md:p-8 max-w-6xl mx-auto space-y-6">
           {activeSection === "dashboard" && <DashboardView config={config} />}
-
           {activeSection === "hero" && (
             <HeroEditorView config={config} setConfig={setConfig} />
           )}
-
           {activeSection === "services" && (
             <ServicesEditorView config={config} setConfig={setConfig} />
           )}
-
           {activeSection === "homeGallery" && (
             <HomeGalleryEditorView config={config} setConfig={setConfig} />
           )}
-
           {activeSection === "topics" && (
             <TopicsEditorView config={config} setConfig={setConfig} />
           )}
-
           {activeSection === "theme" && (
             <ThemeEditorView config={config} setConfig={setConfig} />
           )}
-
           {activeSection === "serviceDetail" && (
             <ServiceDetailEditorView config={config} setConfig={setConfig} />
           )}
-
           {activeSection === "contact" && (
             <ContactEditorView config={config} setConfig={setConfig} />
           )}
@@ -2408,79 +2401,6 @@ function AdminPageInner() {
   );
 }
 
-/* ---------- Guard ด้วย ?key= โดยไม่ใช้ useSearchParams ---------- */
-
-function AdminGuardInner() {
-  const [status, setStatus] = useState<
-    "checking" | "no-key" | "unauthorized" | "ok"
-  >("checking");
-
-  useEffect(() => {
-    if (!ADMIN_KEY) {
-      setStatus("no-key");
-      return;
-    }
-
-    if (typeof window === "undefined") return;
-
-    const params = new URLSearchParams(window.location.search);
-    const key = params.get("key");
-
-    if (key === ADMIN_KEY) {
-      setStatus("ok");
-    } else {
-      setStatus("unauthorized");
-    }
-  }, []);
-
-  if (status === "checking") {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="bg-white border border-slate-200 rounded-2xl px-6 py-4 text-center space-y-2">
-          <p className="text-sm font-semibold text-slate-900">
-            กำลังตรวจสอบสิทธิ์เข้าใช้งาน...
-          </p>
-          <p className="text-xs text-slate-500">
-            โปรดรอสักครู่ หรือเช็คว่าลิงก์ที่ใช้มี ?key=... ครบถ้วน
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  if (status === "no-key") {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="bg-white border border-slate-200 rounded-2xl px-6 py-4 text-center space-y-2">
-          <p className="text-sm font-semibold text-slate-900">
-            ยังไม่ได้ตั้งค่า ADMIN KEY
-          </p>
-          <p className="text-xs text-slate-500">
-            โปรดตั้งค่า NEXT_PUBLIC_ADMIN_KEY ในไฟล์ .env.local และบน Vercel
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  if (status === "unauthorized") {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="bg-white border border-slate-200 rounded-2xl px-6 py-4 text-center space-y-2">
-          <p className="text-sm font-semibold text-slate-900">
-            ไม่อนุญาตให้เข้าถึงหน้า Admin
-          </p>
-          <p className="text-xs text-slate-500">
-            โปรดตรวจสอบว่าลิงก์มีพารามิเตอร์ ?key= ที่ถูกต้อง
-          </p>
-        </div>
-      </div>
-    );
-  }
-
+export default function AdminPage() {
   return <AdminPageInner />;
-}
-
-export default function AdminGuardPage() {
-  return <AdminGuardInner />;
 }

@@ -11,6 +11,7 @@ export default function AdminLoginPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (submitting) return;
@@ -43,7 +44,7 @@ export default function AdminLoginPage() {
       await res.json().catch(() => {});
 
       // ✅ Login ผ่าน → เด้งไปหน้า Admin ตรง ๆ
-      router.replace("/admin?key=shodai-admin-2025-Sa180930@");
+      router.replace("/admin");
     } catch (err) {
       console.error("login error", err);
       setError("เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์");
