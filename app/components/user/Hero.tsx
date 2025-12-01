@@ -1,23 +1,21 @@
-// app/components/user/Hero.tsx
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import Image from "next/image";
 
 type HeroProps = {
-  // รองรับทั้ง string เดี่ยว (ของเดิม) หรือ array หลายรูปจาก Admin
   imageUrl: string | string[];
 };
 
 export default function Hero({ imageUrl }: HeroProps) {
-  // แปลงให้กลายเป็น array เสมอ
-  const imageUrls = Array.isArray(imageUrl)
-    ? imageUrl.filter(Boolean)
-    : imageUrl
-    ? [imageUrl]
-    : [];
+  const imageUrls = useMemo(
+    () =>
+      (Array.isArray(imageUrl) ? imageUrl : imageUrl ? [imageUrl] : []).filter(
+        Boolean
+      ),
+    [imageUrl]
+  );
 
-  // ถ้าไม่มีรูปเลย ไม่ต้องแสดง
   if (imageUrls.length === 0) return null;
 
   const total = imageUrls.length;
@@ -31,7 +29,6 @@ export default function Hero({ imageUrl }: HeroProps) {
     setIndex((i) => (i === 0 ? total - 1 : i - 1));
   }, [total]);
 
-  // Auto slide ทุก 5 วินาที (ถ้ามีมากกว่า 1 รูป)
   useEffect(() => {
     if (total <= 1) return;
     const timer = setInterval(goNext, 5000);
@@ -41,13 +38,12 @@ export default function Hero({ imageUrl }: HeroProps) {
   return (
     <section className="w-full bg-[var(--color-bg)] pt-6 sm:pt-10">
       <div className="w-full relative overflow-hidden">
-        {/* แถบสไลด์ */}
         <div
           className="flex transition-transform duration-700 ease-out"
           style={{ transform: `translateX(-${index * 100}%)` }}
         >
           {imageUrls.map((src, i) => (
-            <div key={i} className="w-full flex-shrink-0">
+            <div key={src + i} className="w-full flex-shrink-0">
               <Image
                 src={src}
                 alt={`ShodaiEV banner ${i + 1}`}
@@ -61,7 +57,6 @@ export default function Hero({ imageUrl }: HeroProps) {
           ))}
         </div>
 
-        {/* ปุ่มเลื่อนซ้าย/ขวา */}
         {total > 1 && (
           <>
             <button
@@ -83,22 +78,19 @@ export default function Hero({ imageUrl }: HeroProps) {
             >
               ›
             </button>
-          </>
-        )}
 
-        {/* จุดบอกหน้า */}
-        {total > 1 && (
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex gap-2">
-            {imageUrls.map((_, i) => (
-              <button
-                key={i}
-                type="button"
-                onClick={() => setIndex(i)}
-                className={`w-2.5 h-2.5 rounded-full border border-white/70 transition
-                  ${index === i ? "bg-white" : "bg-white/30"}`}
-              />
-            ))}
-          </div>
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex gap-2">
+              {imageUrls.map((_, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => setIndex(i)}
+                  className={`w-2.5 h-2.5 rounded-full border border-white/70 transition
+                    ${index === i ? "bg-white" : "bg-white/30"}`}
+                />
+              ))}
+            </div>
+          </>
         )}
       </div>
     </section>

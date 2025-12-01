@@ -4,25 +4,31 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
 
 type HeaderProps = {
-  phone: string;
-  line: string;
+  phone?: string;
+  line?: string;
 };
 
-export default function Header({ phone, line }: HeaderProps) {
+export default function Header({ phone = "", line = "" }: HeaderProps) {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
 
+  // scroll effect
   useEffect(() => {
-    const handle = () => setScrolled(window.scrollY > 50);
-    window.addEventListener("scroll", handle);
-    return () => window.removeEventListener("scroll", handle);
+    const handleScroll = () => setScrolled(window.scrollY > 50);
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // auto close on resize (เปลี่ยนเป็น desktop)
   useEffect(() => {
     const close = () => setOpen(false);
     window.addEventListener("resize", close);
     return () => window.removeEventListener("resize", close);
   }, []);
+
+  const hasPhone = !!phone;
+  const hasLine = !!line;
 
   return (
     <>
@@ -47,23 +53,33 @@ export default function Header({ phone, line }: HeaderProps) {
               </span>
             </a>
 
+            {/* Desktop */}
             <div className="hidden md:flex items-center gap-6">
               <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2 px-4 py-2 rounded-full border border-[var(--color-primary-soft)] bg-[var(--color-surface)]">
-                  <img src="/LINE_Brand_icon.png" className="h-7 w-7" />
-                  <span className="text-sm sm:text-base font-semibold text-[var(--color-primary)] break-all">
-                    {line}
-                  </span>
-                </div>
+                {hasLine && (
+                  <div className="flex items-center gap-2 px-4 py-2 rounded-full border border-[var(--color-primary-soft)] bg-[var(--color-surface)]">
+                    <img
+                      src="/LINE_Brand_icon.png"
+                      alt="LINE"
+                      className="h-7 w-7"
+                    />
+                    <span className="text-sm sm:text-base font-semibold text-[var(--color-primary)] break-all">
+                      {line}
+                    </span>
+                  </div>
+                )}
 
-                <div className="h-8 w-px bg-[var(--color-primary-soft)]" />
-
-                <div className="flex items-center gap-2 px-4 py-2 rounded-full border border-[var(--color-primary-soft)] bg-[var(--color-surface)]">
-                  <span className="text-xl">📞</span>
-                  <span className="text-sm sm:text-base font-semibold text-[var(--color-primary)] break-all">
-                    {phone}
-                  </span>
-                </div>
+                {hasPhone && (
+                  <>
+                    <div className="h-8 w-px bg-[var(--color-primary-soft)]" />
+                    <div className="flex items-center gap-2 px-4 py-2 rounded-full border border-[var(--color-primary-soft)] bg-[var(--color-surface)]">
+                      <span className="text-xl">📞</span>
+                      <span className="text-sm sm:text-base font-semibold text-[var(--color-primary)] break-all">
+                        {phone}
+                      </span>
+                    </div>
+                  </>
+                )}
               </div>
 
               <motion.a
@@ -80,6 +96,7 @@ export default function Header({ phone, line }: HeaderProps) {
               </motion.a>
             </div>
 
+            {/* Mobile button */}
             <button
               type="button"
               className="md:hidden relative w-9 h-9 flex items-center justify-center rounded-full border border-[var(--color-primary-soft)] bg-[var(--color-surface)]"
@@ -106,6 +123,7 @@ export default function Header({ phone, line }: HeaderProps) {
             </button>
           </div>
 
+          {/* Mobile menu */}
           <AnimatePresence>
             {open && (
               <motion.div
@@ -116,18 +134,27 @@ export default function Header({ phone, line }: HeaderProps) {
                 className="mt-3 flex flex-col gap-3 md:hidden"
               >
                 <div className="flex flex-col gap-2">
-                  <div className="flex items-center gap-2 px-4 py-2 rounded-full border border-[var(--color-primary-soft)] bg-[var(--color-surface)]">
-                    <img src="/LINE_Brand_icon.png" className="h-6 w-6" />
-                    <span className="text-sm font-semibold text-[var(--color-primary)] break-all">
-                      {line}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 px-4 py-2 rounded-full border border-[var(--color-primary-soft)] bg-[var(--color-surface)]">
-                    <span className="text-lg">📞</span>
-                    <span className="text-sm font-semibold text-[var(--color-primary)] break-all">
-                      {phone}
-                    </span>
-                  </div>
+                  {hasLine && (
+                    <div className="flex items-center gap-2 px-4 py-2 rounded-full border border-[var(--color-primary-soft)] bg-[var(--color-surface)]">
+                      <img
+                        src="/LINE_Brand_icon.png"
+                        alt="LINE"
+                        className="h-6 w-6"
+                      />
+                      <span className="text-sm font-semibold text-[var(--color-primary)] break-all">
+                        {line}
+                      </span>
+                    </div>
+                  )}
+
+                  {hasPhone && (
+                    <div className="flex items-center gap-2 px-4 py-2 rounded-full border border-[var(--color-primary-soft)] bg-[var(--color-surface)]">
+                      <span className="text-lg">📞</span>
+                      <span className="text-sm font-semibold text-[var(--color-primary)] break-all">
+                        {phone}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex items-center justify-between gap-3">

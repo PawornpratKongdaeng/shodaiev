@@ -1,4 +1,3 @@
-// app/admin/page.tsx
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -10,7 +9,6 @@ import type {
   ThemeColors,
 } from "@/lib/server/siteData";
 import { v4 as uuid } from "uuid";
-
 
 type SectionId =
   | "dashboard"
@@ -50,6 +48,47 @@ const createEmptyConfig = (): SiteConfig => ({
   theme: undefined,
 });
 
+const toFileArray = (files: FileList | File[]) =>
+  Array.isArray(files) ? files : Array.from(files);
+
+const parseUploadResponse = async (res: Response) => {
+  const text = await res.text();
+  try {
+    return JSON.parse(text) as { ok?: boolean; url?: string };
+  } catch {
+    console.error("Upload route returned non-JSON:", text);
+    return null;
+  }
+};
+
+const uploadImages = async (files: FileList | File[]) => {
+  const urls: string[] = [];
+  for (const file of toFileArray(files)) {
+    const formData = new FormData();
+    formData.append("file", file);
+    try {
+      const res = await fetch("/api/admin/upload", {
+        method: "POST",
+        body: formData,
+      });
+      const json = await parseUploadResponse(res);
+      if (json?.ok && json.url) {
+        urls.push(json.url);
+      } else {
+        console.error("Upload failed for", file.name, json);
+      }
+    } catch (err) {
+      console.error("Upload failed:", err);
+    }
+  }
+  return urls;
+};
+
+const uploadSingleImage = async (file: File) => {
+  const urls = await uploadImages([file]);
+  return urls[0] ?? null;
+};
+
 type AdminSidebarProps = {
   activeSection: SectionId;
   setActiveSection: (s: SectionId) => void;
@@ -57,22 +96,22 @@ type AdminSidebarProps = {
   onClose: () => void;
 };
 
+const SIDEBAR_SECTIONS: { id: SectionId; label: string; icon: string }[] = [
+  { id: "dashboard", label: "Overview", icon: "📊" },
+  { id: "hero", label: "หน้าแรก (Hero)", icon: "🏠" },
+  { id: "homeGallery", label: "รูปหน้าแรก", icon: "🖼️" },
+  { id: "topics", label: "หัวข้อบริการ", icon: "📚" },
+  { id: "serviceDetail", label: "รายละเอียดบริการ", icon: "🖼️" },
+  { id: "contact", label: "ข้อมูลติดต่อ", icon: "📱" },
+  { id: "theme", label: "Theme สีเว็บ", icon: "🎨" },
+];
+
 const AdminSidebar = ({
   activeSection,
   setActiveSection,
   isOpen,
   onClose,
 }: AdminSidebarProps) => {
-  const sections: { id: SectionId; label: string; icon: string }[] = [
-    { id: "dashboard", label: "Overview", icon: "📊" },
-    { id: "hero", label: "หน้าแรก (Hero)", icon: "🏠" },
-    { id: "homeGallery", label: "รูปหน้าแรก", icon: "🖼️" },
-    { id: "topics", label: "หัวข้อบริการ", icon: "📚" },
-    { id: "serviceDetail", label: "รายละเอียดบริการ", icon: "🖼️" },
-    { id: "contact", label: "ข้อมูลติดต่อ", icon: "📱" },
-    { id: "theme", label: "Theme สีเว็บ", icon: "🎨" },
-  ];
-
   const renderNav = () => (
     <>
       <div className="p-4 sm:p-6 border-b border-slate-200 flex items-center justify-between">
@@ -96,7 +135,7 @@ const AdminSidebar = ({
       </div>
 
       <nav className="p-3 space-y-1 flex-1 overflow-y-auto">
-        {sections.map((section) => (
+        {SIDEBAR_SECTIONS.map((section) => (
           <button
             key={section.id}
             onClick={() => {
@@ -242,7 +281,7 @@ const DashboardView = ({ config }: { config: SiteConfig }) => {
       value: totalTopics,
       icon: "📚",
     },
-    { label: "Topic", value: totalTopics, icon: "💼" },
+    { label: "Services", value: totalServices, icon: "💼" },
     { label: "Service Detail Pages", value: totalDetails, icon: "🖼️" },
     {
       label: "HomeGallery Images",
@@ -522,40 +561,7 @@ const HeroEditorView = ({ config, setConfig }: HeroEditorProps) => {
 
     setUploading(true);
     try {
-      const newUrls: string[] = [];
-
-      for (const file of Array.from(files)) {
-        const formData = new FormData();
-        formData.append("file", file);
-
-        let json: any = null;
-
-        try {
-          const res = await fetch("/api/admin/upload", {
-            method: "POST",
-            body: formData,
-          });
-
-          const text = await res.text();
-          try {
-            json = JSON.parse(text);
-          } catch {
-            console.error("Upload route returned non-JSON:", text);
-            continue;
-          }
-        } catch (uploadErr) {
-          console.error("Upload failed:", uploadErr);
-          continue;
-        }
-
-        if (!json?.ok || !json?.url) {
-          console.error("Upload failed for", file.name, json);
-          continue;
-        }
-
-        newUrls.push(json.url);
-      }
-
+      const newUrls = await uploadImages(files);
       if (newUrls.length === 0) {
         alert("⛔ Upload failed.");
         return;
@@ -718,9 +724,7 @@ const HeroEditorView = ({ config, setConfig }: HeroEditorProps) => {
         </div>
 
         <div className="pt-2 md:pt-0">
-          <p className="text-xs font-medium text-slate-700 mb-2">
-            Preview
-          </p>
+          <p className="text-xs font-medium text-slate-700 mb-2">Preview</p>
 
           <div className="relative bg-slate-100 border border-sky-200 rounded-2xl overflow-hidden">
             {heroImages.length > 0 ? (
@@ -782,7 +786,6 @@ const HeroEditorView = ({ config, setConfig }: HeroEditorProps) => {
   );
 };
 
-
 type HomeGalleryEditorProps = {
   config: SiteConfig;
   setConfig: (cfg: SiteConfig) => void;
@@ -801,23 +804,7 @@ const HomeGalleryEditorView = ({
 
     setUploading(true);
     try {
-      const newUrls: string[] = [];
-
-      for (const file of Array.from(files)) {
-        const formData = new FormData();
-        formData.append("file", file);
-
-        const res = await fetch("/api/admin/upload", {
-          method: "POST",
-          body: formData,
-        });
-
-        const json = await res.json();
-        if (json.ok && json.url) {
-          newUrls.push(json.url);
-        }
-      }
-
+      const newUrls = await uploadImages(files);
       setConfig({
         ...config,
         homeGallery: [...images, ...newUrls],
@@ -1341,24 +1328,16 @@ const TopicsEditorView = ({ config, setConfig }: TopicsEditorProps) => {
     const file = e.target.files?.[0];
     if (!file || !editItem) return;
 
-    const formData = new FormData();
-    formData.append("file", file);
-
     setThumbUploading(true);
     try {
-      const res = await fetch("/api/admin/upload", {
-        method: "POST",
-        body: formData,
-      });
-      const json = await res.json();
-
-      if (!json.ok || !json.url) {
+      const url = await uploadSingleImage(file);
+      if (!url) {
         alert("อัปโหลดรูป Thumbnail ไม่สำเร็จ");
         return;
       }
 
       setEditItem((prev) =>
-        prev ? { ...prev, thumbnailUrl: json.url as string } : prev
+        prev ? { ...prev, thumbnailUrl: url as string } : prev
       );
     } catch (err) {
       console.error(err);
@@ -1627,7 +1606,6 @@ type ServiceDetailEditorProps = {
   setConfig: React.Dispatch<React.SetStateAction<SiteConfig>>;
 };
 
-
 const ServiceDetailEditorView = ({
   config,
   setConfig,
@@ -1775,25 +1753,7 @@ const ServiceDetailEditorView = ({
 
     setUploading(true);
     try {
-      const newUrls: string[] = [];
-
-      for (const file of Array.from(files)) {
-        const formData = new FormData();
-        formData.append("file", file);
-
-        const res = await fetch("/api/admin/upload", {
-          method: "POST",
-          body: formData,
-        });
-
-        const json = await res.json();
-        if (json.ok && json.url) {
-          newUrls.push(json.url);
-        } else {
-          console.error("Upload failed for file:", file.name);
-        }
-      }
-
+      const newUrls = await uploadImages(files);
       updateDetail((d) => ({
         ...d,
         images: [...(d.images || []), ...newUrls],
@@ -1860,25 +1820,7 @@ const ServiceDetailEditorView = ({
 
     setUploading(true);
     try {
-      const newUrls: string[] = [];
-
-      for (const file of Array.from(files)) {
-        const formData = new FormData();
-        formData.append("file", file);
-
-        const res = await fetch("/api/admin/upload", {
-          method: "POST",
-          body: formData,
-        });
-
-        const json = await res.json();
-        if (json.ok && json.url) {
-          newUrls.push(json.url);
-        } else {
-          console.error("Upload failed for file:", file.name);
-        }
-      }
-
+      const newUrls = await uploadImages(files);
       updateDetail((d) => {
         const sections = d.sections || [];
         const target = sections[index];

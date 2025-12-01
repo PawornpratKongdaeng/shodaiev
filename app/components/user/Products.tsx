@@ -13,7 +13,7 @@ export default function ProductsSection({ products }: ProductsSectionProps) {
   return (
     <section id="products" className="py-16 sm:py-20 bg-white px-4 sm:px-6">
       <div className="max-w-7xl mx-auto">
-        <h2 className="text-2xl sm:3xl md:text-4xl lg:text-5xl font-bold text-slate-900 mb-6 sm:mb-8">
+        <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-slate-900 mb-6 sm:mb-8">
           สินค้าแนะนำ
         </h2>
 
@@ -32,6 +32,7 @@ export default function ProductsSection({ products }: ProductsSectionProps) {
                       fill
                       className="object-cover"
                       sizes="(max-width: 768px) 100vw, 320px"
+                      loading="lazy"
                     />
                   </div>
                 </figure>
@@ -41,9 +42,11 @@ export default function ProductsSection({ products }: ProductsSectionProps) {
                 <h3 className="card-title text-slate-900 text-base sm:text-lg">
                   {p.name || "สินค้า"}
                 </h3>
-                <p className="text-xs sm:text-sm text-slate-600 mt-1">
-                  {p.description || ""}
-                </p>
+                {p.description && (
+                  <p className="text-xs sm:text-sm text-slate-600 mt-1">
+                    {p.description}
+                  </p>
+                )}
               </div>
             </div>
           ))}

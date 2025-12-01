@@ -1,20 +1,27 @@
 "use client";
 
 type ContactProps = {
-  phone: string;
-  line: string;
-  lineUrl: string;
-  facebook: string;
-  mapUrl: string;
+  phone?: string;
+  line?: string;
+  lineUrl?: string;
+  facebook?: string;
+  mapUrl?: string;
 };
 
 export default function Contact({
-  phone,
-  line,
-  lineUrl,
-  facebook,
-  mapUrl,
+  phone = "",
+  line = "",
+  lineUrl = "",
+  facebook = "",
+  mapUrl = "",
 }: ContactProps) {
+  const hasPhone = !!phone;
+  const hasLine = !!line;
+  const hasFacebook = !!facebook;
+  const hasMap = !!mapUrl;
+
+  if (!hasPhone && !hasLine && !hasFacebook && !hasMap) return null;
+
   return (
     <section
       id="contact"
@@ -41,7 +48,7 @@ export default function Contact({
         </div>
 
         <div className="space-y-4 sm:space-y-5">
-          {phone && (
+          {hasPhone && (
             <a
               href={`tel:${phone}`}
               className="block w-full rounded-2xl bg-[var(--color-bg)] p-5 sm:p-6 border border-[var(--color-primary-soft)] hover:border-[var(--color-primary)] shadow-sm hover:shadow-md transition-all"
@@ -55,7 +62,7 @@ export default function Contact({
             </a>
           )}
 
-          {line && (
+          {hasLine && (
             <a
               href={lineUrl || "#"}
               target="_blank"
@@ -63,7 +70,13 @@ export default function Contact({
               className="block w-full rounded-2xl bg-[var(--color-bg)] p-5 sm:p-6 border border-[var(--color-primary-soft)] hover:border-[var(--color-primary)] shadow-sm hover:shadow-md transition-all"
             >
               <div className="flex items-center">
-                <img src="/LINE_Brand_icon.png" className="w-6 h-6" />
+                <img
+                  src="/LINE_Brand_icon.png"
+                  alt="LINE"
+                  width={24}
+                  height={24}
+                  className="w-6 h-6"
+                />
                 <span className="ml-4 text-base sm:text-lg text-[var(--color-text)] break-all">
                   {line}
                 </span>
@@ -71,23 +84,29 @@ export default function Contact({
             </a>
           )}
 
-          {facebook && (
+          {hasFacebook && (
             <a
-              href="https://www.facebook.com/shodaiev/"
+              href={facebook}
               target="_blank"
               rel="noopener noreferrer"
               className="block w-full rounded-2xl bg-[var(--color-bg)] p-5 sm:p-6 border border-[var(--color-primary-soft)] hover:border-[var(--color-primary)] shadow-sm hover:shadow-md transition-all"
             >
               <div className="flex items-center">
-                <img src="/facebook.png" className="w-6 h-6" />
-                <span className="ml-4 text-base sm:text-lg text-[var(--color-text)]">
+                <img
+                  src="/facebook.png"
+                  alt="Facebook"
+                  width={24}
+                  height={24}
+                  className="w-6 h-6"
+                />
+                <span className="ml-4 text-base sm:text-lg text-[var(--color-text)] break-all">
                   {facebook}
                 </span>
               </div>
             </a>
           )}
 
-          {mapUrl && (
+          {hasMap && (
             <a
               href={mapUrl}
               target="_blank"

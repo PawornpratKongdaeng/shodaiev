@@ -1,53 +1,67 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import Image from "next/image";
 
 type ServiceGalleryProps = {
-  images: string[];
+  images?: string[];
 };
 
 export default function ServiceGallery({ images = [] }: ServiceGalleryProps) {
-  if (!images || images.length === 0) return null;
+  const validImages = useMemo(
+    () => images.filter(Boolean),
+    [images]
+  );
 
+  if (validImages.length === 0) return null;
+
+  const total = validImages.length;
   const pageSize = 3;
-  const total = images.length;
-
-  // index ของรูปเริ่มต้นของหน้า current
   const [start, setStart] = useState(0);
 
-  // ถ้ามีรูป <= 3 ให้เลื่อนทีละ 1, ถ้ามีมากกว่า 3 ให้เลื่อนทีละ 3
   const step = total <= pageSize ? 1 : pageSize;
-
-  // รูปที่แสดงในหน้าปัจจุบัน (วนรอบ)
   const visibleCount = Math.min(pageSize, total);
-  const currentSet = Array.from({ length: visibleCount }, (_, i) => {
-    const idx = (start + i) % total;
-    return { url: images[idx], idx };
-  });
 
-  const goPrev = () => {
+  const currentSet = useMemo(
+    () =>
+      Array.from({ length: visibleCount }, (_, i) => {
+        const idx = (start + i) % total;
+        return { url: validImages[idx], idx };
+      }),
+    [visibleCount, start, total, validImages]
+  );
+
+  const goPrev = useCallback(() => {
     setStart((s) => (s - step + total) % total);
-  };
+  }, [step, total]);
 
-  const goNext = () => {
+  const goNext = useCallback(() => {
     setStart((s) => (s + step) % total);
-  };
+  }, [step, total]);
 
   // ---------- Lightbox ----------
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
-  const openLightbox = (index: number) => setLightboxIndex(index);
+
+  const openLightbox = (index: number) => {
+    if (index < 0 || index >= total) return;
+    setLightboxIndex(index);
+  };
+
   const closeLightbox = useCallback(() => setLightboxIndex(null), []);
 
   const prevImage = useCallback(() => {
-    if (lightboxIndex === null || total <= 1) return;
-    setLightboxIndex((i) => (i! === 0 ? total - 1 : i! - 1));
-  }, [lightboxIndex, total]);
+    setLightboxIndex((i) => {
+      if (i === null || total <= 1) return i;
+      return i === 0 ? total - 1 : i - 1;
+    });
+  }, [total]);
 
   const nextImage = useCallback(() => {
-    if (lightboxIndex === null || total <= 1) return;
-    setLightboxIndex((i) => (i! === total - 1 ? 0 : i! + 1));
-  }, [lightboxIndex, total]);
+    setLightboxIndex((i) => {
+      if (i === null || total <= 1) return i;
+      return i === total - 1 ? 0 : i + 1;
+    });
+  }, [total]);
 
   useEffect(() => {
     if (lightboxIndex === null) return;
@@ -60,18 +74,24 @@ export default function ServiceGallery({ images = [] }: ServiceGalleryProps) {
     return () => window.removeEventListener("keydown", handler);
   }, [lightboxIndex, closeLightbox, prevImage, nextImage]);
 
-  const currentImage =
-    lightboxIndex !== null ? images[lightboxIndex] : null;
+  const isLightboxOpen =
+    lightboxIndex !== null &&
+    lightboxIndex >= 0 &&
+    lightboxIndex < total &&
+    !!validImages[lightboxIndex];
 
-  // แสดงเป็น “หน้า x / y”
-  const totalPages = Math.ceil(total / pageSize);
+  const currentImage =
+    isLightboxOpen && lightboxIndex !== null
+      ? validImages[lightboxIndex]
+      : null;
+
+  const totalPages = Math.ceil(total / pageSize) || 1;
   const currentPage =
     total <= pageSize ? 1 : Math.floor(start / pageSize) + 1;
 
   return (
     <section className="py-16 sm:py-20 bg-[var(--color-bg)]">
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
-        {/* Header */}
         <div className="mb-8 sm:mb-10 text-center">
           <h2 className="text-2xl sm:text-3xl font-bold mb-2">
             รูปผลงานตัวอย่าง
@@ -81,23 +101,22 @@ export default function ServiceGallery({ images = [] }: ServiceGalleryProps) {
           </p>
         </div>
 
-        {/* MAIN GALLERY */}
         <div className="relative flex items-center">
-          {/* ปุ่มซ้าย */}
-          <button
-            onClick={goPrev}
-            type="button"
-            className="mr-2 sm:mr-4 w-10 h-10 flex items-center justify-center rounded-full bg-black/40 hover:bg-black/60 text-white text-lg transition z-10"
-          >
-            ‹
-          </button>
+          {total > 1 && (
+            <button
+              onClick={goPrev}
+              type="button"
+              className="mr-2 sm:mr-4 w-10 h-10 flex items-center justify-center rounded-full bg-black/40 hover:bg-black/60 text-white text-lg transition z-10"
+            >
+              ‹
+            </button>
+          )}
 
-          {/* รูป 3 รูป */}
           <div className="flex-1">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
               {currentSet.map(({ url, idx }) => (
                 <button
-                  key={idx}
+                  key={`${url}-${idx}`}
                   type="button"
                   className="relative w-full aspect-[3/4] rounded-xl overflow-hidden border border-slate-200 shadow-sm hover:shadow-lg transition"
                   onClick={() => openLightbox(idx)}
@@ -108,35 +127,34 @@ export default function ServiceGallery({ images = [] }: ServiceGalleryProps) {
                     fill
                     className="object-cover"
                     sizes="(max-width: 768px) 100vw, 33vw"
+                    loading="lazy"
                   />
                 </button>
               ))}
             </div>
           </div>
 
-          {/* ปุ่มขวา */}
-          <button
-            onClick={goNext}
-            type="button"
-            className="ml-2 sm:ml-4 w-10 h-10 flex items-center justify-center rounded-full bg-black/40 hover:bg-black/60 text-white text-lg transition z-10"
-          >
-            ›
-          </button>
+          {total > 1 && (
+            <button
+              onClick={goNext}
+              type="button"
+              className="ml-2 sm:ml-4 w-10 h-10 flex items-center justify-center rounded-full bg-black/40 hover:bg-black/60 text-white text-lg transition z-10"
+            >
+              ›
+            </button>
+          )}
         </div>
 
-        {/* ตัวบอกหน้า */}
         <div className="text-center mt-6 text-slate-500 text-sm">
           หน้า {currentPage} / {totalPages}
         </div>
       </div>
 
-      {/* LIGHTBOX */}
-      {currentImage && (
+      {isLightboxOpen && currentImage && (
         <div className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm flex items-center justify-center">
           <div className="absolute inset-0 z-0" onClick={closeLightbox} />
 
           <div className="relative z-10 w-[96vw] max-w-[520px] sm:max-w-5xl h-[88vh] max-h-[92vh] bg-black rounded-2xl shadow-xl border border-white/20 flex flex-col overflow-hidden">
-            {/* ปุ่มปิด */}
             <button
               onClick={closeLightbox}
               type="button"
@@ -145,7 +163,6 @@ export default function ServiceGallery({ images = [] }: ServiceGalleryProps) {
               ✕
             </button>
 
-            {/* ปุ่มซ้าย/ขวา */}
             {total > 1 && (
               <>
                 <button
@@ -165,7 +182,6 @@ export default function ServiceGallery({ images = [] }: ServiceGalleryProps) {
               </>
             )}
 
-            {/* รูปใหญ่ */}
             <div className="flex-1 flex items-center justify-center px-3 sm:px-6 pb-4 pt-12">
               <div className="relative w-full h-full">
                 <Image
@@ -174,6 +190,7 @@ export default function ServiceGallery({ images = [] }: ServiceGalleryProps) {
                   fill
                   className="object-contain"
                   sizes="100vw"
+                  loading="lazy"
                 />
               </div>
             </div>
