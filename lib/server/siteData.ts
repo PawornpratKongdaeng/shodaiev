@@ -52,6 +52,7 @@ export type ThemeColors = {
 export type SiteConfig = {
   seoServiceDetailDescriptionSuffix: string;
   seoServiceDetailTitlePrefix: string;
+
   heroTitle?: string;
   heroSubtitle?: string;
   heroImageUrl?: string;
@@ -60,12 +61,15 @@ export type SiteConfig = {
   lineUrl?: string;
   facebook?: string;
   mapUrl?: string;
+
   businessName?: string;
   businessAddress?: string;
   businessGeoLat?: number;
   businessGeoLng?: number;
+
   seoTitleHome?: string;
   seoDescriptionHome?: string;
+
   services: ServiceItem[];
   products?: ProductItem[];
   productsSections?: {
@@ -74,6 +78,7 @@ export type SiteConfig = {
   };
   topics?: TopicItem[];
   serviceDetails?: ServiceDetailItem[];
+
   theme?: ThemeColors;
   homeGallery?: string[];
 };
@@ -113,13 +118,37 @@ const defaultConfig: SiteConfig = {
 
 function normalizeConfig(raw: Partial<SiteConfig> | null): SiteConfig {
   const parsed = raw || {};
+
+  // ====== จัดการ productsSections ให้มีค่าเสมอ ======
+  const normalizedProductsSections = {
+    home: Array.isArray(parsed.productsSections?.home)
+      ? parsed.productsSections!.home
+      : Array.isArray(parsed.products)
+      ? parsed.products!
+      : [],
+    page2: Array.isArray(parsed.productsSections?.page2)
+      ? parsed.productsSections!.page2
+      : [],
+  };
+
+  // ====== จัดการ products ให้ sync กับ productsSections.home ======
+  const normalizedProducts =
+    Array.isArray(parsed.products) && parsed.products.length > 0
+      ? parsed.products
+      : normalizedProductsSections.home;
+
   return {
     ...defaultConfig,
     ...parsed,
+
+    // list หลักต่าง ๆ
     services: Array.isArray(parsed.services) ? parsed.services : [],
-    products: Array.isArray(parsed.products) ? parsed.products : [],
-    productsSections:
-      parsed.productsSections ?? { home: [], page2: [] },
+
+    // ใช้ normalizedProducts ที่ซิงค์ไว้แล้ว
+    products: normalizedProducts,
+
+    productsSections: normalizedProductsSections,
+
     topics: Array.isArray(parsed.topics) ? parsed.topics : [],
     serviceDetails: Array.isArray(parsed.serviceDetails)
       ? parsed.serviceDetails
@@ -127,23 +156,26 @@ function normalizeConfig(raw: Partial<SiteConfig> | null): SiteConfig {
     homeGallery: Array.isArray(parsed.homeGallery)
       ? parsed.homeGallery
       : [],
+
     theme: parsed.theme
       ? { ...defaultTheme, ...parsed.theme }
       : defaultTheme,
   };
 }
 
+
 const COLLECTION = "site_config";
 const DOC_ID = "main";
 
 export async function loadSiteData(): Promise<SiteConfig> {
   const db = await getDb();
-  const collection = db.collection<{ _id: string; data: SiteConfig }>(COLLECTION);
-  const doc = await collection.findOne({ _id: DOC_ID });
+  const col =
+    db.collection<{ _id: string; data: SiteConfig }>(COLLECTION);
+  const doc = await col.findOne({ _id: DOC_ID });
 
   if (!doc || !doc.data) {
     const normalized = normalizeConfig(defaultConfig);
-    await collection.updateOne(
+    await col.updateOne(
       { _id: DOC_ID },
       { $set: { data: normalized } },
       { upsert: true }
@@ -156,12 +188,83 @@ export async function loadSiteData(): Promise<SiteConfig> {
 
 export async function saveSiteData(data: SiteConfig): Promise<void> {
   const db = await getDb();
-  const collection = db.collection<{ _id: string; data: SiteConfig }>(COLLECTION);
+  const col =
+    db.collection<{ _id: string; data: SiteConfig }>(COLLECTION);
   const normalized = normalizeConfig(data);
 
-  await collection.updateOne(
+  await col.updateOne(
     { _id: DOC_ID },
     { $set: { data: normalized } },
     { upsert: true }
   );
+}
+
+/* -------------------------------------------------------------
+ *  Section-based save helpers
+ * ------------------------------------------------------------*/
+
+export type HeroPayload = Pick<
+  SiteConfig,
+  | "heroTitle"
+  | "heroSubtitle"
+  | "heroImageUrl"
+  | "phone"
+  | "line"
+  | "lineUrl"
+  | "facebook"
+  | "mapUrl"
+>;
+
+export async function saveHeroSection(payload: HeroPayload) {
+  const current = await loadSiteData();
+  await saveSiteData({ ...current, ...payload });
+}
+
+export type HomeGalleryPayload = Pick<SiteConfig, "homeGallery">;
+
+export async function saveHomeGallerySection(
+  payload: HomeGalleryPayload
+) {
+  const current = await loadSiteData();
+  await saveSiteData({ ...current, ...payload });
+}
+
+export type ServicesPayload = Pick<SiteConfig, "services">;
+
+export async function saveServicesSection(payload: ServicesPayload) {
+  const current = await loadSiteData();
+  await saveSiteData({ ...current, ...payload });
+}
+
+export type TopicsPayload = Pick<SiteConfig, "topics">;
+
+export async function saveTopicsSection(payload: TopicsPayload) {
+  const current = await loadSiteData();
+  await saveSiteData({ ...current, ...payload });
+}
+
+export type ServiceDetailPayload = Pick<SiteConfig, "serviceDetails">;
+
+export async function saveServiceDetailSection(
+  payload: ServiceDetailPayload
+) {
+  const current = await loadSiteData();
+  await saveSiteData({ ...current, ...payload });
+}
+
+export type ContactPayload = Pick<
+  SiteConfig,
+  "phone" | "line" | "lineUrl" | "facebook" | "mapUrl"
+>;
+
+export async function saveContactSection(payload: ContactPayload) {
+  const current = await loadSiteData();
+  await saveSiteData({ ...current, ...payload });
+}
+
+export type ThemePayload = Pick<SiteConfig, "theme">;
+
+export async function saveThemeSection(payload: ThemePayload) {
+  const current = await loadSiteData();
+  await saveSiteData({ ...current, ...payload });
 }

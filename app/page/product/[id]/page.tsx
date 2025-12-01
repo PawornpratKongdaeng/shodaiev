@@ -1,13 +1,15 @@
 // app/page/product/[id]/page.tsx
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { loadSiteData } from "@/lib/server/siteData";
-import type {
-  TopicItem,
-  ServiceDetailItem,
-  SiteConfig,
+import {
+  loadSiteData,
+  type TopicItem,
+  type ServiceDetailItem,
+  type SiteConfig,
+  defaultTheme,
 } from "@/lib/server/siteData";
 import Header from "@/app/components/user/Header";
+import ThemeVars from "@/app/components/user/ThemeVars";
 import type { Metadata } from "next";
 import Script from "next/script";
 
@@ -19,32 +21,30 @@ type ProductDetailPageParams = {
 };
 
 type ProductDetailPageProps = {
-  params: Promise<ProductDetailPageParams>;
+  params: ProductDetailPageParams;
 };
 
 export const dynamic = "force-dynamic";
 
+// ---------- SEO ----------
 export async function generateMetadata(
-  props: { params: Promise<ProductDetailPageParams> }
+  { params }: ProductDetailPageProps
 ): Promise<Metadata> {
-  const { id } = await props.params;
-  const decodedId = decodeURIComponent(id);
+  const id = String(params?.id ?? "");
 
   const data: SiteConfig = await loadSiteData();
   const topics: TopicItem[] = Array.isArray(data.topics)
-    ? (data.topics as TopicItem[])
+    ? data.topics
     : [];
   const details: ServiceDetailItem[] = Array.isArray(data.serviceDetails)
-    ? (data.serviceDetails as ServiceDetailItem[])
+    ? data.serviceDetails
     : [];
 
-  const topic = topics.find((t) => t.id === decodedId);
+  const topic = topics.find((t) => t.id === id);
 
   if (!topic) {
     return {
-      title: {
-        absolute: "ShodaiEV",
-      },
+      title: { absolute: "ShodaiEV" },
       description: "ไม่พบบริการที่คุณต้องการ",
     };
   }
@@ -85,13 +85,14 @@ export async function generateMetadata(
   };
 }
 
+// ---------- PAGE ----------
 export default async function ProductDetailPage({
   params,
 }: ProductDetailPageProps) {
-  const { id } = await params;
-  const decodedId = decodeURIComponent(id);
+  const id = String(params?.id ?? "");
 
   const data = await loadSiteData();
+  const theme = data.theme ?? defaultTheme;
 
   const topics: TopicItem[] = Array.isArray(data.topics)
     ? (data.topics as TopicItem[])
@@ -101,7 +102,7 @@ export default async function ProductDetailPage({
     ? (data.serviceDetails as ServiceDetailItem[])
     : [];
 
-  const topic = topics.find((t) => t.id === decodedId);
+  const topic = topics.find((t) => t.id === id);
 
   if (!topic) {
     return notFound();
@@ -137,6 +138,8 @@ export default async function ProductDetailPage({
 
   return (
     <main className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)] pb-10">
+      <ThemeVars theme={theme} />
+
       <Script
         id="ld-service-detail"
         type="application/ld+json"
@@ -148,6 +151,7 @@ export default async function ProductDetailPage({
 
       <Header phone={data.phone ?? ""} line={data.line ?? ""} />
 
+      {/* Hero / breadcrumb */}
       <section className="bg-[var(--color-surface)] py-8 sm:py-10 md:py-12 px-4 sm:px-6 border-b border-[var(--color-primary-soft)]">
         <div className="max-w-5xl mx-auto space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3 text-xs sm:text-sm text-[var(--color-text)]/70">
@@ -157,7 +161,7 @@ export default async function ProductDetailPage({
               </Link>
               <span>/</span>
               <Link
-                href="/page/product"
+                href="/page/products"
                 className="hover:text-[var(--color-primary)]"
               >
                 บริการทั้งหมด
@@ -191,8 +195,10 @@ export default async function ProductDetailPage({
         </div>
       </section>
 
+      {/* Content */}
       <section className="py-8 sm:py-10 px-4 sm:px-6 bg-[var(--color-bg)]">
         <div className="max-w-5xl mx-auto grid gap-8 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+          {/* Images */}
           <div className="space-y-4">
             <h2 className="text-base sm:text-lg font-semibold mb-2">
               รูปภาพตัวอย่างงาน / บริการ
@@ -259,6 +265,7 @@ export default async function ProductDetailPage({
             )}
           </div>
 
+          {/* Right side info */}
           <aside className="space-y-7">
             <div className="bg-[var(--color-bg)] rounded-xl border border-[var(--color-primary-soft)] p-4 sm:p-5 shadow-sm">
               <h2 className="text-base sm:text-lg font-semibold mb-2">
@@ -305,73 +312,7 @@ export default async function ProductDetailPage({
         </div>
       </section>
 
-      {sections.length > 0 && (
-        <section className="pb-10 px-4 sm:px-6 bg-[var(--color-bg)]">
-          <div className="max-w-5xl mx-auto space-y-4">
-            <div className="flex items-center justify-between gap-2 flex-wrap">
-              <h2 className="text-lg sm:text-xl font-semibold">
-                รายละเอียดแยกตามหมวดงานในบริการนี้
-              </h2>
-              <span className="text-[11px] sm:text-xs px-3 py-1 rounded-full bg-[var(--color-surface)] text-[var(--color-text)]/80 border border-[var(--color-primary-soft)]">
-                มี {sections.length} หมวดงาน
-              </span>
-            </div>
-
-            <div className="space-y-4">
-              {sections.map((sec, idx) => {
-                const secImages = sec.images ?? [];
-                return (
-                  <article
-                    key={sec.id || idx}
-                    className="bg-[var(--color-bg)] border border-[var(--color-primary-soft)] rounded-xl p-4 sm:p-5 shadow-sm flex flex-col gap-3"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="text-[11px] uppercase tracking-[0.18em] text-[var(--color-primary)] mb-1">
-                          หมวดงาน #{idx + 1}
-                        </p>
-                        <h3 className="text-base sm:text-lg font-semibold">
-                          {sec.title || `หัวข้อย่อยที่ ${idx + 1}`}
-                        </h3>
-                      </div>
-                    </div>
-
-                    {sec.description && (
-                      <p className="text-xs sm:text-sm text-[var(--color-text)]/80 whitespace-pre-line">
-                        {sec.description}
-                      </p>
-                    )}
-
-                    {secImages.length > 0 && (
-                      <div className="space-y-2">
-                        <p className="text-[11px] sm:text-xs text-[var(--color-primary)] font-medium">
-                          รูปตัวอย่างงานหมวดนี้ ({secImages.length})
-                        </p>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                          {secImages.map((url, i) => (
-                            <a
-                              key={`${sec.id || idx}-${url}-${i}`}
-                              href={`#sec-${idx}-${i}`}
-                              className="overflow-hidden rounded-lg border border-[var(--color-primary-soft)] bg-[var(--color-surface)] cursor-pointer"
-                            >
-                              <img
-                                src={url}
-                                alt={`${sec.title || "sub-service"}-${i + 1}`}
-                                className="w-full h-24 sm:h-28 object-cover hover:scale-105 transition-transform"
-                              />
-                            </a>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </article>
-                );
-              })}
-            </div>
-          </div>
-        </section>
-      )}
-
+      {/* Lightbox – main images */}
       {images.map((url, index) => {
         const prevIndex = index === 0 ? images.length - 1 : index - 1;
         const nextIndex = index === images.length - 1 ? 0 : index + 1;
@@ -422,6 +363,7 @@ export default async function ProductDetailPage({
         );
       })}
 
+      {/* Lightbox – section images */}
       {sections.length > 0 &&
         sections.map((sec, sIdx) => {
           const secImages = sec.images ?? [];

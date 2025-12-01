@@ -2,6 +2,7 @@
 import "./globals.css";
 import type { Metadata } from "next";
 import { loadSiteData, defaultTheme } from "@/lib/server/siteData";
+import ThemeVars from "@/app/components/user/ThemeVars";
 
 const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL || "https://shodaiev.com";

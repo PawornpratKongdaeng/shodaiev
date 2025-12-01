@@ -3,9 +3,10 @@ import Header from "./components/user/Header";
 import Hero from "./components/user/Hero";
 import ContactSection from "./components/user/Contact";
 import ProductsSection from "./components/user/Products";
+import ThemeVars from "./components/user/ThemeVars";
 
 import ServiceGallery from "./components/user/ServiceGallery";
-import { loadSiteData, type SiteConfig } from "@/lib/server/siteData";
+import { loadSiteData, type SiteConfig, defaultTheme } from "@/lib/server/siteData";
 import Link from "next/link";
 import type { Metadata } from "next";
 import Script from "next/script";
@@ -36,6 +37,7 @@ export default async function HomePage() {
   const lat = data.businessGeoLat;
   const lng = data.businessGeoLng;
   const ogImage = data.heroImageUrl || "";
+  const theme = data.theme ?? defaultTheme;
 
   const heroImages =
     Array.isArray((data as any).heroImages) &&
@@ -79,6 +81,7 @@ export default async function HomePage() {
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-50 to-white text-slate-900">
+      <ThemeVars theme={theme} />
       <Script
         id="ld-local-business"
         type="application/ld+json"
@@ -101,7 +104,6 @@ export default async function HomePage() {
 
       <ProductsSection products={products} />
 
-      {/* Section บริการ (CTA ไป /page/products) */}
       <section
         id="services"
         className="py-16 sm:py-20 bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 relative overflow-hidden"

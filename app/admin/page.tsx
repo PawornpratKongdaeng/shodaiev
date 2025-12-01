@@ -48,6 +48,9 @@ const createEmptyConfig = (): SiteConfig => ({
   theme: undefined,
 });
 
+
+
+
 const toFileArray = (files: FileList | File[]) =>
   Array.isArray(files) ? files : Array.from(files);
 
@@ -84,10 +87,55 @@ const uploadImages = async (files: FileList | File[]) => {
   return urls;
 };
 
+// 👇 เพิ่มอันนี้ต่อจาก uploadImages
 const uploadSingleImage = async (file: File) => {
   const urls = await uploadImages([file]);
   return urls[0] ?? null;
 };
+
+const buildHeroPayload = (config: SiteConfig) => ({
+  heroTitle: config.heroTitle,
+  heroSubtitle: config.heroSubtitle,
+  heroImageUrl: config.heroImageUrl,
+  phone: config.phone,
+  line: config.line,
+  lineUrl: config.lineUrl,
+  facebook: config.facebook,
+  mapUrl: config.mapUrl,
+});
+
+const buildHomeGalleryPayload = (config: SiteConfig) => ({
+  homeGallery: Array.isArray(config.homeGallery) ? config.homeGallery : [],
+});
+
+const buildServicesPayload = (config: SiteConfig) => ({
+  services: Array.isArray(config.services) ? config.services : [],
+});
+
+const buildTopicsPayload = (config: SiteConfig) => ({
+  topics: Array.isArray(config.topics) ? (config.topics as TopicItem[]) : [],
+});
+
+const buildServiceDetailPayload = (config: SiteConfig) => ({
+  serviceDetails: Array.isArray(config.serviceDetails)
+    ? (config.serviceDetails as ServiceDetailItem[])
+    : [],
+});
+
+const buildContactPayload = (config: SiteConfig) => ({
+  phone: config.phone,
+  line: config.line,
+  lineUrl: config.lineUrl,
+  facebook: config.facebook,
+  mapUrl: config.mapUrl,
+});
+
+const buildThemePayload = (config: SiteConfig) => ({
+  theme: config.theme,
+});
+
+
+
 
 type AdminSidebarProps = {
   activeSection: SectionId;
@@ -538,8 +586,11 @@ const HeroEditorView = ({ config, setConfig }: HeroEditorProps) => {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const heroImages: string[] = Array.isArray(config.heroImageUrl)
-    ? config.heroImageUrl
-    : [];
+  ? config.heroImageUrl
+  : config.heroImageUrl
+  ? [config.heroImageUrl]
+  : [];
+
 
   useEffect(() => {
     if (currentIndex >= heroImages.length) {
@@ -2233,6 +2284,17 @@ function AdminPageInner() {
   const [notice, setNotice] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState<SectionId>("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const buildHeroPayload = (config: SiteConfig) => ({
+  heroTitle: config.heroTitle,
+  heroSubtitle: config.heroSubtitle,
+  heroImageUrl: config.heroImageUrl,
+  phone: config.phone,
+  line: config.line,
+  lineUrl: config.lineUrl,
+  facebook: config.facebook,
+  mapUrl: config.mapUrl,
+});
+
 
   useEffect(() => {
     const fetchConfig = async () => {
@@ -2255,25 +2317,73 @@ function AdminPageInner() {
   }, []);
 
   const handleSave = async () => {
-    setSaving(true);
-    try {
-      const res = await fetch("/api/admin/config", {
+  setSaving(true);
+  try {
+    const heroPayload = buildHeroPayload(config);
+    const homeGalleryPayload = buildHomeGalleryPayload(config);
+    const servicesPayload = buildServicesPayload(config);
+    const topicsPayload = buildTopicsPayload(config);
+    const serviceDetailPayload = buildServiceDetailPayload(config);
+    const contactPayload = buildContactPayload(config);
+    const themePayload = buildThemePayload(config);
+
+    const requests = [
+      fetch("/api/admin/hero", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(config),
-      });
-      if (!res.ok) throw new Error("Failed to save config");
+        body: JSON.stringify(heroPayload),
+      }),
+      fetch("/api/admin/homeGallery", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(homeGalleryPayload),
+      }),
+      fetch("/api/admin/services", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(servicesPayload),
+      }),
+      fetch("/api/admin/topics", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(topicsPayload),
+      }),
+      fetch("/api/admin/serviceDetail", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(serviceDetailPayload),
+      }),
+      fetch("/api/admin/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(contactPayload),
+      }),
+      fetch("/api/admin/theme", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(themePayload),
+      }),
+    ];
 
-      setNotice("บันทึกข้อมูลเรียบร้อยแล้ว");
-      setTimeout(() => setNotice(null), 3000);
-    } catch (err) {
-      console.error(err);
-      setNotice("บันทึกข้อมูลไม่สำเร็จ กรุณาลองใหม่");
-      setTimeout(() => setNotice(null), 4000);
-    } finally {
-      setSaving(false);
+    const responses = await Promise.all(requests);
+    const failed = responses.filter((r) => !r.ok);
+
+    if (failed.length > 0) {
+      console.error("Some save requests failed:", failed);
+      throw new Error("Some sections failed to save");
     }
-  };
+
+    setNotice("บันทึกข้อมูลเรียบร้อยแล้ว");
+    setTimeout(() => setNotice(null), 3000);
+  } catch (err) {
+    console.error(err);
+    setNotice("บันทึกข้อมูลไม่สำเร็จ กรุณาลองใหม่");
+    setTimeout(() => setNotice(null), 4000);
+  } finally {
+    setSaving(false);
+  }
+};
+
 
   if (loading) {
     return (
@@ -2349,3 +2459,4 @@ function AdminPageInner() {
 export default function AdminPage() {
   return <AdminPageInner />;
 }
+

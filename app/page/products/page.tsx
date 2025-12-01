@@ -1,6 +1,8 @@
+// app/page/products/page.tsx
 import type { Metadata } from "next";
-import { loadSiteData } from "@/lib/server/siteData";
-import Header from "../../components/user/Header";
+import { loadSiteData, defaultTheme } from "@/lib/server/siteData";
+import Header from "@/app/components/user/Header";
+import ThemeVars from "@/app/components/user/ThemeVars";
 import Image from "next/image";
 
 const SITE_URL =
@@ -19,12 +21,14 @@ export const metadata: Metadata = {
 
 export default async function ServicePage() {
   const data = await loadSiteData();
+  const theme = data.theme ?? defaultTheme;
 
-  // ป้องกัน topics เป็น null หรือ undefined
   const topics = Array.isArray(data.topics) ? data.topics : [];
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50">
+      <ThemeVars theme={theme} />
+
       <Header phone={data.phone ?? ""} line={data.line ?? ""} />
 
       {/* Hero */}
