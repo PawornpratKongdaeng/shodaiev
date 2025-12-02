@@ -2,23 +2,16 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
+    // ✅ บอก Next.js ว่า "อย่าใช้ image optimizer"
+    unoptimized: true,
     remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "shodaiev.com",
-        pathname: "/**",
-      },
-      {
-        protocol: "https",
-        hostname: "www.shodaiev.com",
-        pathname: "/**",
-      },
+      { protocol: "https", hostname: "shodaiev.com", pathname: "/**" },
+      { protocol: "https", hostname: "www.shodaiev.com", pathname: "/**" },
       {
         protocol: "https",
         hostname: "kuqizsvhpesa44qy.public.blob.vercel-storage.com",
         pathname: "/**",
       },
-      // 👇 อันใหม่สำหรับ Cloudflare R2
       {
         protocol: "https",
         hostname: "pub-e7440998ddc246219a43cd789dde7102.r2.dev",
