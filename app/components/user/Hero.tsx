@@ -48,14 +48,17 @@ export default function Hero({ imageUrl }: HeroProps) {
   <div key={src + i} className="w-full flex-shrink-0">
     <div className="relative w-full h-[260px] sm:h-[320px] md:h-[380px] lg:h-[420px] xl:h-[480px]">
   <Image
-    src={src}
-    alt="ShodaiEV Banner"
-    fill
-    quality={75}
-    sizes="100vw"
-    loading="lazy"
-    className="object-cover"
-  />
+  src={src}
+  alt="ShodaiEV Banner"
+  width={1600}
+  height={900}
+  quality={70}
+  priority={i === 0}       // เฉพาะรูปแรกเพื่อ LCP
+  className="w-full h-auto object-cover"
+  sizes="100vw"
+  unoptimized              // ✅ ใช้ R2 ตรง ๆ ไม่ผ่าน /_next/image
+/>
+
 </div>
 
   </div>
