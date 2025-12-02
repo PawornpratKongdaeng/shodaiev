@@ -42,7 +42,7 @@ const ServiceGallery = dynamic(
   }
 );
 
-export const revalidate = 600;
+export const revalidate = 0; // disable caching
 
 export default async function HomePage() {
   const data: SiteConfig = await loadSiteData();

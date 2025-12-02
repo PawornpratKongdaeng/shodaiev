@@ -706,8 +706,8 @@ const HeroEditorView = ({ config, setConfig }: HeroEditorProps) => {
   alt={`hero-${idx + 1}`}
   fill
   className="object-cover"
-  priority={idx === 0} // โหลดก่อนเฉพาะภาพแรก
-  unoptimized           // ⬅️ บอก Next ให้ใช้ URL ตรงจาก R2 เลย
+  priority={false}   // ไม่ต้อง LCP ใน admin
+  unoptimized        // ✅ โหลดจาก R2 ตรง ๆ
 />
 
                     <span className="absolute bottom-0 left-0 right-0 text-[10px] bg-black/50 text-white text-center">
