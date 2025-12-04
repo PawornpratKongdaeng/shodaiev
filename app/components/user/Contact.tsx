@@ -89,7 +89,7 @@ export default function Contact({
 
           {hasFacebook && (
             <a
-              href={facebook}
+              href={facebook || "#"}
               target="_blank"
               rel="noopener noreferrer"
               className="block w-full rounded-2xl bg-[var(--color-bg)] p-4 sm:p-5 border border-[var(--color-primary-soft)] hover:border-[var(--color-primary)] shadow-sm hover:shadow-md transition-all"

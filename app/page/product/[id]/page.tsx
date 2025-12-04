@@ -14,7 +14,6 @@ import type { Metadata } from "next";
 import Script from "next/script";
 import Image from "next/image";
 
-
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://shodaiev.com";
 
 type ProductDetailPageParams = {
@@ -105,7 +104,7 @@ export default async function ProductDetailPage(props: ProductDetailPageProps) {
   const decodedId = await getDecodedIdFromProps(props);
 
   const data = await loadSiteData();
-  const theme = data.theme ?? defaultTheme;
+  const theme = (data as SiteConfig).theme ?? defaultTheme;
 
   const topics: TopicItem[] = Array.isArray(data.topics)
     ? (data.topics as TopicItem[])
@@ -225,14 +224,14 @@ export default async function ProductDetailPage(props: ProductDetailPageProps) {
                 <div className="overflow-hidden rounded-xl border border-[var(--color-primary-soft)] bg-[var(--color-surface)] cursor-pointer">
                   <a href="#img-0">
                     <Image
-  src={images[0]}
-  alt={title}
-  width={1280}
-  height={500}
-  priority
-  className="w-full max-h-[420px] sm:max-h-[500px] object-cover hover:scale-[1.03] transition-transform"
-  loading="lazy"
-/>
+                      src={images[0]}
+                      alt={title}
+                      width={1280}
+                      height={500}
+                      priority
+                      className="w-full max-h-[420px] sm:max-h-[500px] object-cover hover:scale-[1.03] transition-transform"
+                      loading="lazy"
+                    />
                   </a>
                 </div>
 
@@ -258,15 +257,15 @@ export default async function ProductDetailPage(props: ProductDetailPageProps) {
                               className="relative overflow-hidden rounded-lg border border-[var(--color-primary-soft)] bg-[var(--color-surface)]"
                             >
                               <Image
-  src={url}
-  alt="service-detail"
-  width={400}
-  height={180}
-  className={`w-full h-24 sm:h-28 md:h-32 object-cover hover:scale-105 transition-transform ${
-    isLastThumb ? "opacity-60" : ""
-  }`}
-  loading="lazy"
-/>
+                                src={url}
+                                alt="service-detail"
+                                width={400}
+                                height={180}
+                                className={`w-full h-24 sm:h-28 md:h-32 object-cover hover:scale-105 transition-transform ${
+                                  isLastThumb ? "opacity-60" : ""
+                                }`}
+                                loading="lazy"
+                              />
                               {isLastThumb && extraCount > 0 && (
                                 <div className="absolute inset-0 flex items-center justify-center bg-black/55 text-white text-[11px] sm:text-xs md:text-sm font-semibold">
                                   +{extraCount}
@@ -379,7 +378,9 @@ export default async function ProductDetailPage(props: ProductDetailPageProps) {
                             >
                               <Image
                                 src={url}
-                                alt={`${sec.title || "sub-service"}-${i + 1}`}
+                                alt={`${sec.title || "sub-service"}-${
+                                  i + 1
+                                }`}
                                 width={400}
                                 height={200}
                                 className="w-full h-24 sm:h-28 object-cover hover:scale-105 transition-transform"
@@ -429,13 +430,13 @@ export default async function ProductDetailPage(props: ProductDetailPageProps) {
                 </a>
 
                 <Image
-  src={url}
-  alt={`service-image-${index}`}
-  width={1200}
-  height={800}
-  className="w-full max-h-[85vh] object-contain bg-black"
-  loading="lazy"
-/>
+                  src={url}
+                  alt={`service-image-${index}`}
+                  width={1200}
+                  height={800}
+                  className="w-full max-h-[85vh] object-contain bg-black"
+                  loading="lazy"
+                />
 
                 <a
                   href={`#img-${nextIndex}`}
@@ -457,11 +458,12 @@ export default async function ProductDetailPage(props: ProductDetailPageProps) {
       {sections.length > 0 &&
         sections.map((sec, sIdx) => {
           const secImages = sec.images ?? [];
-          return secImages.map((url, i) => {
-            if (secImages.length === 0) return null;
+          if (secImages.length === 0) return null;
 
+          return secImages.map((url, i) => {
             const prevIndex = i === 0 ? secImages.length - 1 : i - 1;
-            const nextIndex = i === secImages.length - 1 ? 0 : i + 1;
+            const nextIndex =
+              i === secImages.length - 1 ? 0 : i + 1;
 
             return (
               <div
@@ -488,13 +490,13 @@ export default async function ProductDetailPage(props: ProductDetailPageProps) {
                     </a>
 
                     <Image
-  src={url}
-  alt={`${sec.title || "sub-service"}-${i + 1}`}
-  width={400}
-  height={120}
-  className="w-full h-24 sm:h-28 object-cover hover:scale-105 transition-transform"
-  loading="lazy"
-/>
+                      src={url}
+                      alt={`${sec.title || "sub-service"}-${i + 1}`}
+                      width={1200}
+                      height={800}
+                      className="w-full max-h-[85vh] object-contain bg-black"
+                      loading="lazy"
+                    />
 
                     <a
                       href={`#sec-${sIdx}-${nextIndex}`}

@@ -1030,14 +1030,27 @@ const ContactEditorView = ({ config, setConfig }: ContactEditorProps) => (
 
       <div className="md:col-span-2">
         <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-          Facebook Page URL
+          Facebook
         </label>
         <input
           type="url"
           className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sky-300 focus:border-transparent bg-white"
           value={config.facebook || ""}
           onChange={(e) => setConfig({ ...config, facebook: e.target.value })}
-          placeholder="https://facebook.com/yourpage"
+          placeholder=""
+        />
+      </div>
+
+      <div className="md:col-span-2">
+        <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+          Facebook Url
+        </label>
+        <input
+          type="url"
+          className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sky-300 focus:border-transparent bg-white"
+          value={config.facebookUrl || ""}
+          onChange={(e) => setConfig({ ...config, facebookUrl: e.target.value })}
+          placeholder=""
         />
       </div>
 

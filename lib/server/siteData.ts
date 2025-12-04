@@ -60,6 +60,7 @@ export type SiteConfig = {
   line?: string;
   lineUrl?: string;
   facebook?: string;
+  facebookUrl?: string;
   mapUrl?: string;
 
   businessName?: string;
@@ -212,6 +213,7 @@ export type HeroPayload = Pick<
   | "line"
   | "lineUrl"
   | "facebook"
+  | "facebookUrl"
   | "mapUrl"
 >;
 
