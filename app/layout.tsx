@@ -1,8 +1,8 @@
 // app/layout.tsx
 import "./globals.css";
 import type { Metadata } from "next";
+import Script from "next/script";
 import { loadSiteData, defaultTheme } from "@/lib/server/siteData";
-import ThemeVars from "@/app/components/user/ThemeVars";
 
 const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL || "https://shodaiev.com";
@@ -57,6 +57,39 @@ export default async function RootLayout({
 
   return (
     <html lang="th">
+      <head>
+        {/* เตรียม dataLayer สำหรับ GTM */}
+        <Script
+          id="gtm-datalayer"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              window.dataLayer.push({
+                event: "page_view",
+                page_path: window.location.pathname,
+                page_title: document.title
+              });
+            `,
+          }}
+        />
+
+        {/* GTM main script */}
+        <Script
+          id="gtm-init"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+              new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+              j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+              'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+              })(window,document,'script','dataLayer','GTM-NVXP6CL');
+            `,
+          }}
+        />
+      </head>
+
       <body
         style={{
           ["--color-primary" as any]: theme.primary,
@@ -68,6 +101,16 @@ export default async function RootLayout({
         }}
         className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)]"
       >
+        {/* noscript สำหรับกรณีปิด JS (ตามที่ GTM แนะนำ) */}
+        <noscript>
+          <iframe
+            src="https://www.googletagmanager.com/ns.html?id=GTM-NVXP6CL"
+            height="0"
+            width="0"
+            style={{ display: "none", visibility: "hidden" }}
+          ></iframe>
+        </noscript>
+
         {children}
       </body>
     </html>

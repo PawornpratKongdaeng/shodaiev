@@ -320,7 +320,7 @@ const DashboardView = ({ config }: { config: SiteConfig }) => {
       value: totalTopics,
       icon: "📚",
     },
-    { label: "Services", value: totalServices, icon: "💼" },
+    { label: "Services", value: totalTopics, icon: "💼" },
     { label: "Service Detail Pages", value: totalDetails, icon: "🖼️" },
     {
       label: "HomeGallery Images",
