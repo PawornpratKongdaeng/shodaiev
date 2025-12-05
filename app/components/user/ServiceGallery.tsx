@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import Image from "next/image";
 
 type GalleryProps = {
@@ -9,37 +9,8 @@ type GalleryProps = {
 
 export default function ServiceGallery({ images }: GalleryProps) {
   const total = images.length;
-  const perPage = 6;
-
-  const [currentPage, setCurrentPage] = useState(1);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
-
-  const totalPages = useMemo(
-    () => (total === 0 ? 1 : Math.ceil(total / perPage)),
-    [total]
-  );
-
-  const startIndex = useMemo(
-    () => (currentPage - 1) * perPage,
-    [currentPage]
-  );
-
-  const currentSet = useMemo(
-    () =>
-      images
-        .slice(startIndex, startIndex + perPage)
-        .map((url, i) => ({ url, idx: startIndex + i })),
-    [images, startIndex]
-  );
-
-  const goPrev = () => {
-    setCurrentPage((prev) => (prev <= 1 ? totalPages : prev - 1));
-  };
-
-  const goNext = () => {
-    setCurrentPage((prev) => (prev >= totalPages ? 1 : prev + 1));
-  };
 
   const openLightbox = (idx: number) => {
     setLightboxIndex(idx);
@@ -82,59 +53,32 @@ export default function ServiceGallery({ images }: GalleryProps) {
           </p>
         </div>
 
-        <div className="relative flex items-center">
-          {totalPages > 1 && (
-            <button
-              onClick={goPrev}
-              type="button"
-              className="hidden sm:flex mr-4 w-9 h-9 items-center justify-center rounded-full bg-black/40 hover:bg-black/60 text-white text-lg transition z-10"
-            >
-              ‹
-            </button>
-          )}
-
-          <div className="flex-1">
-            <div className="grid grid-cols-3 sm:grid-cols-6 gap-4 sm:gap-6">
-              {currentSet.map(({ url, idx }) => (
-                <button
-                  key={`${url}-${idx}`}
-                  type="button"
-                  className="relative w-full aspect-[3/5] rounded-lg sm:rounded-xl overflow-hidden border border-slate-200 shadow-sm hover:shadow-lg transition"
-                  onClick={() => openLightbox(idx)}
-                >
-                  <Image
-                    src={url}
-                    alt={`gallery-${idx}`}
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 720px) 33vw, 16vw"
-                    loading="lazy"
-                  />
-                </button>
-              ))}
-            </div>
+        <div>
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-4 sm:gap-6">
+            {images.map((url, idx) => (
+              <button
+                key={`${url}-${idx}`}
+                type="button"
+                className="relative w-full aspect-[3/5] rounded-lg sm:rounded-xl overflow-hidden border border-slate-200 shadow-sm hover:shadow-lg transition"
+                onClick={() => openLightbox(idx)}
+              >
+                <Image
+                  src={url}
+                  alt={`gallery-${idx}`}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 720px) 33vw, 16vw"
+                  loading="lazy"
+                />
+              </button>
+            ))}
           </div>
-
-          {totalPages > 1 && (
-            <button
-              onClick={goNext}
-              type="button"
-              className="hidden sm:flex ml-4 w-9 h-9 items-center justify-center rounded-full bg-black/40 hover:bg-black/60 text-white text-lg transition z-10"
-            >
-              ›
-            </button>
-          )}
-        </div>
-
-        <div className="text-center mt-4 text-slate-500 text-xs sm:text-sm">
-          หน้า {currentPage} / {totalPages}
         </div>
       </div>
 
       {isLightboxOpen && currentImage && (
         <div className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm flex items-center justify-center">
           <div className="absolute inset-0 z-0" onClick={closeLightbox} />
-
           <div className="relative z-10 w-[96vw] max-w-[480px] sm:max-w-4xl h-[82vh] max-h-[90vh] bg-black rounded-2xl shadow-xl border border-white/20 flex flex-col overflow-hidden">
             <button
               onClick={closeLightbox}

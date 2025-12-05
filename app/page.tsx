@@ -119,9 +119,7 @@ export default async function HomePage() {
 
       <Hero imageUrl={heroImages} />
 
-      <ServiceGallery images={homeGallery} />
 
-      <ProductsSection products={products} />
 
       <section
         id="services"
@@ -209,6 +207,8 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      <ServiceGallery images={homeGallery} />
 
       <ContactSection
         phone={data.phone ?? ""}
