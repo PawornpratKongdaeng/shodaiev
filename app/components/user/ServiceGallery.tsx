@@ -1,89 +1,74 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useMemo, useState } from "react";
 import Image from "next/image";
 
-type ServiceGalleryProps = {
-  images?: string[];
+type GalleryProps = {
+  images: string[];
 };
 
-export default function ServiceGallery({ images = [] }: ServiceGalleryProps) {
-  const validImages = useMemo(() => images.filter(Boolean), [images]);
+export default function ServiceGallery({ images }: GalleryProps) {
+  const total = images.length;
+  const perPage = 6;
 
-  if (validImages.length === 0) return null;
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
-  const total = validImages.length;
-  const pageSize = 3;
-  const [start, setStart] = useState(0);
+  const totalPages = useMemo(
+    () => (total === 0 ? 1 : Math.ceil(total / perPage)),
+    [total]
+  );
 
-  const step = total <= pageSize ? 1 : pageSize;
-  const visibleCount = Math.min(pageSize, total);
+  const startIndex = useMemo(
+    () => (currentPage - 1) * perPage,
+    [currentPage]
+  );
 
   const currentSet = useMemo(
     () =>
-      Array.from({ length: visibleCount }, (_, i) => {
-        const idx = (start + i) % total;
-        return { url: validImages[idx], idx };
-      }),
-    [visibleCount, start, total, validImages]
+      images
+        .slice(startIndex, startIndex + perPage)
+        .map((url, i) => ({ url, idx: startIndex + i })),
+    [images, startIndex]
   );
 
-  const goPrev = useCallback(() => {
-    setStart((s) => (s - step + total) % total);
-  }, [step, total]);
-
-  const goNext = useCallback(() => {
-    setStart((s) => (s + step) % total);
-  }, [step, total]);
-
-  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
-
-  const openLightbox = (index: number) => {
-    if (index < 0 || index >= total) return;
-    setLightboxIndex(index);
+  const goPrev = () => {
+    setCurrentPage((prev) => (prev <= 1 ? totalPages : prev - 1));
   };
 
-  const closeLightbox = useCallback(() => setLightboxIndex(null), []);
+  const goNext = () => {
+    setCurrentPage((prev) => (prev >= totalPages ? 1 : prev + 1));
+  };
 
-  const prevImage = useCallback(() => {
-    setLightboxIndex((i) => {
-      if (i === null || total <= 1) return i;
-      return i === 0 ? total - 1 : i - 1;
-    });
-  }, [total]);
+  const openLightbox = (idx: number) => {
+    setLightboxIndex(idx);
+    setIsLightboxOpen(true);
+  };
 
-  const nextImage = useCallback(() => {
-    setLightboxIndex((i) => {
-      if (i === null || total <= 1) return i;
-      return i === total - 1 ? 0 : i + 1;
-    });
-  }, [total]);
-
-  useEffect(() => {
-    if (lightboxIndex === null) return;
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") closeLightbox();
-      if (e.key === "ArrowLeft") prevImage();
-      if (e.key === "ArrowRight") nextImage();
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [lightboxIndex, closeLightbox, prevImage, nextImage]);
-
-  const isLightboxOpen =
-    lightboxIndex !== null &&
-    lightboxIndex >= 0 &&
-    lightboxIndex < total &&
-    !!validImages[lightboxIndex];
+  const closeLightbox = () => {
+    setIsLightboxOpen(false);
+    setLightboxIndex(null);
+  };
 
   const currentImage =
-    isLightboxOpen && lightboxIndex !== null
-      ? validImages[lightboxIndex]
+    lightboxIndex !== null && images[lightboxIndex]
+      ? images[lightboxIndex]
       : null;
 
-  const totalPages = Math.ceil(total / pageSize) || 1;
-  const currentPage =
-    total <= pageSize ? 1 : Math.floor(start / pageSize) + 1;
+  const prevImage = () => {
+    if (lightboxIndex === null || total === 0) return;
+    setLightboxIndex((prev) =>
+      prev === null ? 0 : prev === 0 ? total - 1 : prev - 1
+    );
+  };
+
+  const nextImage = () => {
+    if (lightboxIndex === null || total === 0) return;
+    setLightboxIndex((prev) =>
+      prev === null ? 0 : prev === total - 1 ? 0 : prev + 1
+    );
+  };
 
   return (
     <section className="py-12 sm:py-16 bg-[var(--color-bg)]">
@@ -98,7 +83,7 @@ export default function ServiceGallery({ images = [] }: ServiceGalleryProps) {
         </div>
 
         <div className="relative flex items-center">
-          {total > 1 && (
+          {totalPages > 1 && (
             <button
               onClick={goPrev}
               type="button"
@@ -109,12 +94,12 @@ export default function ServiceGallery({ images = [] }: ServiceGalleryProps) {
           )}
 
           <div className="flex-1">
-            <div className="grid grid-cols-6 sm:grid-cols-6 gap-6 sm:gap-6">
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-4 sm:gap-6">
               {currentSet.map(({ url, idx }) => (
                 <button
                   key={`${url}-${idx}`}
                   type="button"
-                  className="relative w-full aspect-[3/4] rounded-lg sm:rounded-xl overflow-hidden border border-slate-200 shadow-sm hover:shadow-lg transition"
+                  className="relative w-full aspect-[3/5] rounded-lg sm:rounded-xl overflow-hidden border border-slate-200 shadow-sm hover:shadow-lg transition"
                   onClick={() => openLightbox(idx)}
                 >
                   <Image
@@ -122,7 +107,7 @@ export default function ServiceGallery({ images = [] }: ServiceGalleryProps) {
                     alt={`gallery-${idx}`}
                     fill
                     className="object-cover"
-                    sizes="(max-width: 640px) 50vw, 33vw"
+                    sizes="(max-width: 720px) 33vw, 16vw"
                     loading="lazy"
                   />
                 </button>
@@ -130,7 +115,7 @@ export default function ServiceGallery({ images = [] }: ServiceGalleryProps) {
             </div>
           </div>
 
-          {total > 1 && (
+          {totalPages > 1 && (
             <button
               onClick={goNext}
               type="button"
