@@ -21,6 +21,15 @@ export default function Contact({
   const hasLine = !!line;
   const hasFacebook = !!facebook;
   const hasMap = !!mapUrl;
+  const handlePhoneClick = () => {
+  if (typeof window !== "undefined" && (window as any).dataLayer) {
+    (window as any).dataLayer.push({
+      event: "phone_click",
+      phone_number: phone,
+    });
+  }
+};
+
 
   if (!hasPhone && !hasLine && !hasFacebook && !hasMap) return null;
 
@@ -53,13 +62,8 @@ export default function Contact({
           {hasPhone && (
             <a
   href={`tel:${phone}`}
-  onClick={() => {
-    if (typeof window !== "undefined" && (window as any).gtag) {
-      (window as any).gtag("event", "conversion", {
-        send_to: "AW-11024557003/JyihCJW3m4waEMvH9Ygp",
-      });
-    }
-  }}
+  onClick={handlePhoneClick}
+  className="block w-full rounded-2xl bg-[var(--color-bg)] p-4 sm:p-5 border border-[var(--color-primary-soft)] hover:border-[var(--color-primary)] shadow-sm hover:shadow-md transition-all"
 >
               <div className="flex items-center">
                 <span className="text-lg sm:text-xl">📞</span>
